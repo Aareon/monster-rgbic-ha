@@ -76,7 +76,10 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
 
     @property
     def brightness(self) -> int | None:
-        val = self._props.get(PROP_BRIGHTNESS)
+        # In color mode the visible dimmer is color_bright, not brightness.
+        val = self._props.get(PROP_COLOR_BRIGHT)
+        if val is None:
+            val = self._props.get(PROP_BRIGHTNESS)
         if val is None:
             return None
         return round(int(val) / 100 * 255)
@@ -118,7 +121,8 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
 
         if ATTR_BRIGHTNESS in kwargs:
             pct = max(1, round(kwargs[ATTR_BRIGHTNESS] / 255 * 100))
-            await self._set(PROP_BRIGHTNESS, pct)
+            # color_bright is the visible dimmer in color mode.
+            await self._set(PROP_COLOR_BRIGHT, pct)
 
         await self._set(PROP_POWER, 1)
         await self.coordinator.async_request_refresh()
