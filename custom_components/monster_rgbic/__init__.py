@@ -12,7 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import MonsterAylaApi
 from .const import CONF_EMAIL, CONF_LOCAL, CONF_PASSWORD
 from .coordinator import MonsterCoordinator
-from .lan import MonsterLanController
+from .lan import BASE_PORT, MonsterLanController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,8 +31,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: MonsterConfigEntry) -> b
     # Optionally bring up LAN-mode controllers (best-effort; falls back to cloud).
     coordinator.lan_controllers = {}
     if entry.data.get(CONF_LOCAL, True):
-        for dsn, dev in coordinator.devices.items():
-            controller = MonsterLanController(api, dsn, dev.get("lan_ip"))
+        for index, (dsn, dev) in enumerate(coordinator.devices.items()):
+            # Each bulb gets its own local port (it connects back to us).
+            controller = MonsterLanController(
+                api, dsn, dev.get("lan_ip"), BASE_PORT + index
+            )
             try:
                 if await controller.async_start():
                     coordinator.lan_controllers[dsn] = controller

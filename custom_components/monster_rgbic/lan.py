@@ -41,7 +41,9 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 _LOGGER = logging.getLogger(__name__)
 
-LOCAL_PORT = 8899
+# Each bulb needs its own local server port (the bulb connects back to us), so
+# multiple bulbs use BASE_PORT, BASE_PORT+1, ...
+BASE_PORT = 8899
 REG_TIMEOUT = aiohttp.ClientTimeout(total=10)
 
 
@@ -101,10 +103,12 @@ class _Session:
 class MonsterLanController:
     """Manages a LAN session with one Monster RGBIC bulb."""
 
-    def __init__(self, api: Any, dsn: str, device_ip: str | None = None) -> None:
+    def __init__(self, api: Any, dsn: str, device_ip: str | None = None,
+                 port: int = BASE_PORT) -> None:
         self._api = api  # MonsterAylaApi, used only to fetch the lanip_key
         self._dsn = dsn
         self._device_ip = device_ip
+        self._port = port
         self._session: _Session | None = None
         self._runner: web.AppRunner | None = None
         self._local_ip: str | None = None
@@ -142,7 +146,7 @@ class MonsterLanController:
         app.router.add_route("*", "/{tail:.*}", self._h_default)
         self._runner = web.AppRunner(app)
         await self._runner.setup()
-        site = web.TCPSite(self._runner, "0.0.0.0", LOCAL_PORT)
+        site = web.TCPSite(self._runner, "0.0.0.0", self._port)
         await site.start()
 
         if not await self._register(0, "post"):
@@ -232,7 +236,7 @@ class MonsterLanController:
 
     async def _register(self, notify: int, method: str) -> bool:
         reg = {"local_reg": {"ip": self._local_ip, "notify": notify,
-                             "port": LOCAL_PORT, "uri": "/local_lan"}}
+                             "port": self._port, "uri": "/local_lan"}}
         url = f"http://{self._device_ip}/local_reg.json"
         try:
             async with aiohttp.ClientSession() as s:

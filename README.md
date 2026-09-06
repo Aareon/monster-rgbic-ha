@@ -37,17 +37,24 @@ an automatic cloud fallback.
 - The bulb allows **one local controller at a time.** While Home Assistant holds
   the LAN session, the **Monster phone app can’t connect locally** to that bulb
   (and vice‑versa). If the app is holding it, HA logs a notice and uses the cloud.
-- Home Assistant must be reachable by the bulb on the LAN (the bulb connects back
-  to HA on TCP port **8899**).
+- Home Assistant must be reachable by the bulb on the LAN (each bulb connects
+  back to HA on its own TCP port, starting at **8899**, then 8900, 8901, …).
 - Set one property at a time (the integration already does this).
 
 ## Installation
 
 ### HACS (custom repository)
 
-1. HACS → ⋮ → **Custom repositories** → add this repo's URL, category
-   **Integration**.
-2. Install **Monster Smart Lighting (RGBIC)**, then restart Home Assistant.
+This integration isn't in the default HACS store — add it as a **custom
+repository**:
+
+1. In Home Assistant, open **HACS**.
+2. Click the **⋮** menu (top‑right) → **Custom repositories**.
+3. **Repository:** `https://github.com/Aareon/monster-rgbic-ha`
+4. **Type / Category:** **Integration** → click **Add**.
+5. Search HACS for **Monster Smart Lighting (RGBIC)**, click **Download**, then
+   **restart Home Assistant**.
+6. Configure it via **Settings → Devices & Services → Add Integration** (below).
 
 ### Manual
 
@@ -61,6 +68,14 @@ Copy `custom_components/monster_rgbic/` into your Home Assistant
 then enter your Monster app email + password. Each strip appears as a light
 entity with on/off, brightness, and color.
 
+## Multiple bulbs
+
+**Fully supported.** The integration enumerates every Monster device on your
+account and creates a separate light entity and HA device for each — including
+several bulbs or strips **of the same model**. Local (LAN) control scales too:
+each bulb gets its own local port (8899, 8900, 8901, …), so any number of bulbs
+can be driven locally at the same time.
+
 ## Notes
 
 - **Region:** hard‑coded to the US "Field" Ayla cluster (matches the extracted
@@ -69,6 +84,16 @@ entity with on/off, brightness, and color.
 - **Credentials** are stored in the Home Assistant config entry, like any other
   cloud integration, and are only sent to Monster/Ayla.
 - The Ayla session (~24 h) is refreshed automatically.
+
+## How this was built (transparency)
+
+This integration was developed collaboratively with **Anthropic's Claude**
+(via Claude Code). That includes reverse‑engineering Monster's undocumented,
+certificate‑pinned cloud authentication **and** the Ayla LAN‑mode protocol, plus
+writing all of the code here. The work was grounded in real device traffic — the
+LAN crypto was verified to reproduce the app's captured packets byte‑for‑byte,
+and the result was tested live against actual hardware. Noted here in the
+interest of full transparency about how the code was produced.
 
 ## Disclaimer
 
