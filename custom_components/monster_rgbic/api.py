@@ -56,12 +56,16 @@ class MonsterAylaApi:
                 "email": self._email,
                 "password": self._password,
             },
+            # The Copilot API validates these enums and returns 400 otherwise.
+            # It advertises deviceType TABLET/PHONE/PC/Unknown and osType
+            # IOS/ANDROID/BROWSER/Unknown, but empirically only these values are
+            # accepted (e.g. osType "Unknown" is rejected despite being listed).
             "deviceDetails": {
                 "applicationVersion": "1.0.0",
                 "deviceId": self._device_id,
                 "deviceModel": "HomeAssistant",
-                "deviceType": "server",
-                "osType": "linux",
+                "deviceType": "phone",
+                "osType": "android",
                 "osVersion": "1",
                 "timezone": {
                     "currentTimeMillis": 0,
