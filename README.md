@@ -20,9 +20,26 @@ certificate tricks):
 - ✅ On / off
 - ✅ Brightness
 - ✅ RGB color
+- ✅ **Local (LAN) control** — direct, offline‑capable control (see below)
 - 🔜 Effects (Rainbow, Fire, Confetti… — dozens of built‑in scenes)
 - 🔜 White / color‑temperature mode
 - 🔜 Per‑IC control
+
+## Local (LAN) control
+
+With **“Use local (LAN) control”** enabled (default), the integration fetches
+each bulb’s static `lanip_key` from the cloud **once**, then drives the bulbs
+**directly on your LAN** using Ayla’s LAN protocol — fast and functional even if
+the internet is down. State is still polled via the cloud; writes go local with
+an automatic cloud fallback.
+
+**Important limitations:**
+- The bulb allows **one local controller at a time.** While Home Assistant holds
+  the LAN session, the **Monster phone app can’t connect locally** to that bulb
+  (and vice‑versa). If the app is holding it, HA logs a notice and uses the cloud.
+- Home Assistant must be reachable by the bulb on the LAN (the bulb connects back
+  to HA on TCP port **8899**).
+- Set one property at a time (the integration already does this).
 
 ## Installation
 

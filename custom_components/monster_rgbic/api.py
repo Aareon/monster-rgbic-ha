@@ -176,9 +176,24 @@ class MonsterAylaApi:
         return out
 
     async def async_set_property(self, dsn: str, name: str, value: Any) -> None:
-        """Create a datapoint (write a property value)."""
+        """Create a datapoint (write a property value) via the cloud."""
         await self._ayla_request(
             "POST",
             f"/apiv1/dsns/{dsn}/properties/{name}/datapoints.json",
             json={"datapoint": {"value": value}},
         )
+
+    async def async_get_lan_info(self, dsn: str) -> dict[str, Any]:
+        """Return {lanip_key, lanip_key_id, lan_ip} for LAN-mode setup."""
+        data = await self._ayla_request("GET", f"/apiv1/dsns/{dsn}/lan.json")
+        lanip = (data or {}).get("lanip", {}) if isinstance(data, dict) else {}
+        info: dict[str, Any] = {
+            "lanip_key": lanip.get("lanip_key"),
+            "lanip_key_id": lanip.get("lanip_key_id"),
+            "lan_ip": None,
+        }
+        for dev in await self.async_get_devices():
+            if dev.get("dsn") == dsn:
+                info["lan_ip"] = dev.get("lan_ip")
+                break
+        return info

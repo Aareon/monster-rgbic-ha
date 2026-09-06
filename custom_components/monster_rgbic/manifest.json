@@ -1,7 +1,7 @@
 {
   "domain": "monster_rgbic",
   "name": "Monster Smart Lighting (RGBIC)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "config_flow": true,
   "iot_class": "cloud_polling",
   "integration_type": "hub",
@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/aareon/monster_rgbic/issues",
   "codeowners": [],
   "dependencies": [],
-  "requirements": []
+  "requirements": ["cryptography>=41.0.0"]
 }

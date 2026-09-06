@@ -32,6 +32,8 @@ class MonsterCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         self.entry = entry
         # dsn -> device info dict (product_name, oem_model, etc.)
         self.devices: dict[str, dict[str, Any]] = {}
+        # dsn -> MonsterLanController (populated by __init__.py when local mode is on)
+        self.lan_controllers: dict[str, Any] = {}
 
     async def _async_setup(self) -> None:
         """One-time discovery of devices (HA calls this before first refresh)."""

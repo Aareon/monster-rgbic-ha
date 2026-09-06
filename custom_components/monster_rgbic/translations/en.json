@@ -6,7 +6,11 @@
         "description": "Sign in with your Monster Smart Lighting app account.",
         "data": {
           "email": "Email",
-          "password": "Password"
+          "password": "Password",
+          "local_control": "Use local (LAN) control"
+        },
+        "data_description": {
+          "local_control": "Control the bulbs directly on your LAN (fast, works offline). The Monster app can't hold a local session at the same time; falls back to the cloud automatically."
         }
       }
     },

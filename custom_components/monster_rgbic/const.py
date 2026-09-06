@@ -25,6 +25,7 @@ AYLA_APP_SECRET = "RGBIC-O7v7HvMh9OjQBz8eA6tL6Pprp8U"
 # --- Config entry keys ---
 CONF_EMAIL = "email"
 CONF_PASSWORD = "password"
+CONF_LOCAL = "local_control"  # prefer LAN-mode for writes (see lan.py)
 
 # --- Device datapoint (property) names ---
 PROP_POWER = "power"                # boolean

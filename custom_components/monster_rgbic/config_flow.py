@@ -11,12 +11,18 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import MonsterApiError, MonsterAuthError, MonsterAylaApi
-from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
+from .const import CONF_EMAIL, CONF_LOCAL, CONF_PASSWORD, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_SCHEMA = vol.Schema(
-    {vol.Required(CONF_EMAIL): str, vol.Required(CONF_PASSWORD): str}
+    {
+        vol.Required(CONF_EMAIL): str,
+        vol.Required(CONF_PASSWORD): str,
+        # LAN control is fast and offline-capable, but the Monster app can't be
+        # connected at the same time (the bulb allows one local controller).
+        vol.Optional(CONF_LOCAL, default=True): bool,
+    }
 )
 
 
@@ -48,7 +54,11 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_create_entry(
                     title=f"Monster Lighting ({email})",
-                    data={CONF_EMAIL: email, CONF_PASSWORD: user_input[CONF_PASSWORD]},
+                    data={
+                        CONF_EMAIL: email,
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                        CONF_LOCAL: user_input.get(CONF_LOCAL, True),
+                    },
                 )
 
         return self.async_show_form(

@@ -20,6 +20,8 @@ from .const import (
     DOMAIN,
     MODE_COLOR,
     PROP_BRIGHTNESS,
+    PROP_COLOR_BRIGHT,
+    PROP_COLOR_SAT,
     PROP_COLOR_SELECT,
     PROP_MODE,
     PROP_POWER,
@@ -87,28 +89,43 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
         packed = int(val)
         return ((packed >> 16) & 0xFF, (packed >> 8) & 0xFF, packed & 0xFF)
 
+    # Property base types (LAN needs these; the cloud call ignores them).
+    _BASE_TYPES = {
+        PROP_POWER: "boolean",
+        PROP_MODE: "string",
+        PROP_BRIGHTNESS: "integer",
+        PROP_COLOR_SELECT: "integer",
+        PROP_COLOR_BRIGHT: "integer",
+        PROP_COLOR_SAT: "integer",
+    }
+
+    async def _set(self, name: str, value: Any) -> None:
+        """Write one property: try LAN first, fall back to the cloud."""
+        controller = self.coordinator.lan_controllers.get(self._dsn)
+        if controller is not None and controller.available:
+            base_type = self._BASE_TYPES.get(name, "integer")
+            if await controller.async_set_property(name, value, base_type):
+                return
+        await self.coordinator.api.async_set_property(self._dsn, name, value)
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on, optionally setting brightness and/or RGB color."""
-        api = self.coordinator.api
-
         if ATTR_RGB_COLOR in kwargs:
             r, g, b = kwargs[ATTR_RGB_COLOR]
             # Switch to solid-color mode, then set the packed color.
-            await api.async_set_property(self._dsn, PROP_MODE, MODE_COLOR)
-            await api.async_set_property(
-                self._dsn, PROP_COLOR_SELECT, (r << 16) | (g << 8) | b
-            )
+            await self._set(PROP_MODE, MODE_COLOR)
+            await self._set(PROP_COLOR_SELECT, (r << 16) | (g << 8) | b)
 
         if ATTR_BRIGHTNESS in kwargs:
             pct = max(1, round(kwargs[ATTR_BRIGHTNESS] / 255 * 100))
-            await api.async_set_property(self._dsn, PROP_BRIGHTNESS, pct)
+            await self._set(PROP_BRIGHTNESS, pct)
 
-        await api.async_set_property(self._dsn, PROP_POWER, 1)
+        await self._set(PROP_POWER, 1)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self.coordinator.api.async_set_property(self._dsn, PROP_POWER, 0)
+        await self._set(PROP_POWER, 0)
         await self.coordinator.async_request_refresh()
 
     @callback
