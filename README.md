@@ -76,6 +76,19 @@ several bulbs or strips **of the same model**. Local (LAN) control scales too:
 each bulb gets its own local port (8899, 8900, 8901, …), so any number of bulbs
 can be driven locally at the same time.
 
+### Adding another bulb later
+
+Devices are discovered **when the integration loads**, so a bulb added after
+setup is **not auto‑detected** — you need one reload:
+
+1. **Pair the new bulb in the Monster app first.** The integration reads your
+   Ayla account; it doesn't do Wi‑Fi onboarding. Adding the bulb in the app puts
+   it on the same account these credentials use.
+2. In Home Assistant, **reload the integration**: Settings → Devices & Services →
+   **Monster Smart Lighting** → ⋮ → **Reload** (or restart Home Assistant).
+3. The new bulb appears as its own light entity and device (and gets its own LAN
+   port if local control is on).
+
 ## Notes
 
 - **Region:** hard‑coded to the US "Field" Ayla cluster (matches the extracted
