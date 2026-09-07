@@ -24,6 +24,8 @@ certificate tricks):
   as a Home Assistant effect list (see below)
 - ✅ **Per‑IC segments** — paint sections of the strip by IC index via the
   `monster_rgbic.set_segments` service (see below)
+- ✅ **Custom animated effects** — supply a color palette and let the bulb
+  animate it on‑device via `monster_rgbic.set_custom_effect` (see below)
 - ✅ **Local (LAN) control** — direct, offline‑capable control (see below)
 - 🔜 White / color‑temperature mode
 
@@ -82,6 +84,41 @@ IC indices are 0‑based; the strip's IC count is read from the device
 also shows up in the effect dropdown as `Per-IC: <name>` for one‑tap re‑use.
 The encoding was reverse‑engineered from a captured preset and is reproduced
 byte‑for‑byte.
+
+## Custom animated effects
+
+Beyond the built‑in scenes, you can hand the bulb your **own palette** and have
+it animate it **on‑device** via **`monster_rgbic.set_custom_effect`**. Because
+the animation runs on the bulb's own microcontroller (not streamed frame‑by‑
+frame from Home Assistant), it's smooth and fast — well past the ~6 fps ceiling
+that limits externally‑streamed per‑IC animation.
+
+```yaml
+service: monster_rgbic.set_custom_effect
+target:
+  entity_id: light.xtreme_rgbic_ls_1
+data:
+  colors:
+    - [255, 0, 255]   # magenta
+    - [0, 255, 255]   # cyan
+    - [255, 128, 0]   # orange
+  style: Tracer       # motion style (see below)
+  speed: 80           # 1 (slow) - 100 (fast)
+  brightness: 100     # optional, 1-100
+```
+
+`style` selects the motion — `Blink`, `Breath`, `Tracer`, `Color Wipe`,
+`Confetti`, `Blue Fire`, `RGB Chase`, `Color Run`, `Color Flow`, `Marquee`. Each
+style maps to one of the strip's **DIY preset slots**, so running a custom effect
+**overwrites that slot's stored preset** — exactly as editing that DIY effect in
+the app would. The effect then also appears in the effect dropdown as
+`DIY: <name>` for one‑tap reuse.
+
+> **Streamed vs. on‑device:** `set_segments` streams exact per‑IC frames from HA
+> (great for static layouts and slow animation, but capped at ~6 fps by the
+> bulb's command‑poll rate). `set_custom_effect` offloads the animation to the
+> bulb for fast, smooth motion, at the cost of using the built‑in motion styles
+> rather than arbitrary per‑frame control.
 
 ## Local (LAN) control
 

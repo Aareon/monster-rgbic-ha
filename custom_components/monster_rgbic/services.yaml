@@ -58,3 +58,70 @@ set_segments:
       default: HA Custom
       selector:
         text:
+
+set_custom_effect:
+  name: Set custom effect
+  description: >-
+    Run a custom animated effect from a color palette. The bulb animates it
+    on-device at native speed (no frame streaming, so no ~6 fps ceiling). The
+    motion style maps to a DIY slot, so this overwrites that slot's stored
+    preset (same as editing that DIY effect in the app).
+  target:
+    entity:
+      integration: monster_rgbic
+      domain: light
+  fields:
+    colors:
+      name: Palette
+      description: >-
+        1-16 RGB colors the animation cycles through,
+        e.g. [[255, 0, 255], [0, 255, 255], [255, 128, 0]].
+      required: true
+      example: "[[255, 0, 255], [0, 255, 255], [255, 128, 0]]"
+      selector:
+        object:
+    style:
+      name: Motion style
+      description: Which animation style (each maps to a DIY slot it overwrites).
+      required: false
+      default: Tracer
+      selector:
+        select:
+          options:
+            - Blink
+            - Breath
+            - Tracer
+            - Color Wipe
+            - Confetti
+            - Blue Fire
+            - RGB Chase
+            - Color Run
+            - Color Flow
+            - Marquee
+    speed:
+      name: Speed
+      description: Animation speed (1 slow - 100 fast).
+      required: false
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: slider
+    brightness:
+      name: Brightness
+      description: Effect brightness (1-100).
+      required: false
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: slider
+    name:
+      name: Effect name
+      description: Name to store the effect under.
+      required: false
+      default: HA Custom
+      selector:
+        text:

@@ -51,15 +51,38 @@ PER_IC_SLOTS = 5
 # Verified live: setting mode + <family>_pat plays the built-in scene, and the
 # _pat index equals the slot number.
 #   mode -> (slot prefix, selector property, human family label)
+# NB: the mode value is what the device reports/accepts. All families are
+# lowercase EXCEPT "DIY", which the firmware spells uppercase (verified from the
+# app's own traffic and on hardware) -- sending "diy" is silently ignored.
 EFFECT_FAMILIES: dict[str, tuple[str, str, str]] = {
     "static": ("st", "st_pat", "Static"),
     "dynamic": ("dyn", "dyn_pat", "Dynamic"),
     "music": ("mus", "mus_pat", "Music"),
-    "diy": ("diy", "diy_pat", "DIY"),
+    "DIY": ("diy", "diy_pat", "DIY"),
     "per_ic": ("pic", "per_ic_pat", "Per-IC"),
 }
 # Up to 16 slots per family (00..15).
 EFFECT_MAX_SLOTS = 16
+
+# --- Custom on-device effects (DIY slots) ---
+# A DIY slot animates a custom color palette on the bulb's own MCU at native
+# refresh (far past the ~6 fps ceiling for externally-streamed frames). The
+# motion *style* is bound to the slot index; the palette (ca) and speed (s) are
+# what you customize. These are each slot's default/shipped style name.
+MODE_DIY = "DIY"
+PROP_DIY_PAT = "diy_pat"
+DIY_STYLES: dict[str, int] = {
+    "Blink": 0,
+    "Breath": 1,
+    "Tracer": 2,
+    "Color Wipe": 3,
+    "Confetti": 4,
+    "Blue Fire": 5,
+    "RGB Chase": 6,
+    "Color Run": 7,
+    "Color Flow": 8,
+    "Marquee": 9,
+}
 
 # Ayla session lifetime is ~24h; refresh a bit early.
 DEFAULT_SCAN_INTERVAL = 30  # seconds

@@ -23,16 +23,19 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import MonsterConfigEntry
 from . import peric
 from .const import (
+    DIY_STYLES,
     DOMAIN,
     EFFECT_FAMILIES,
     EFFECT_MAX_SLOTS,
     MODE_COLOR,
+    MODE_DIY,
     MODE_PER_IC,
     PER_IC_SLOTS,
     PROP_BRIGHTNESS,
     PROP_COLOR_BRIGHT,
     PROP_COLOR_SAT,
     PROP_COLOR_SELECT,
+    PROP_DIY_PAT,
     PROP_MAX_ICS,
     PROP_MODE,
     PROP_NUM_ICS,
@@ -42,6 +45,7 @@ from .const import (
 from .coordinator import MonsterCoordinator
 
 SERVICE_SET_SEGMENTS = "set_segments"
+SERVICE_SET_CUSTOM_EFFECT = "set_custom_effect"
 _RGB = vol.All(
     vol.ExactSequence([vol.All(vol.Coerce(int), vol.Range(min=0, max=255))] * 3),
     vol.Coerce(tuple),
@@ -64,6 +68,15 @@ SET_SEGMENTS_SCHEMA = {
     ),
     vol.Optional("name", default="HA Custom"): cv.string,
 }
+SET_CUSTOM_EFFECT_SCHEMA = {
+    vol.Required("colors"): vol.All(cv.ensure_list, [_RGB], vol.Length(min=1, max=16)),
+    vol.Optional("style", default="Tracer"): vol.In(list(DIY_STYLES)),
+    vol.Optional("speed", default=50): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional("brightness", default=100): vol.All(
+        vol.Coerce(int), vol.Range(min=1, max=100)
+    ),
+    vol.Optional("name", default="HA Custom"): cv.string,
+}
 
 
 async def async_setup_entry(
@@ -79,6 +92,9 @@ async def async_setup_entry(
     platform = entity_platform.async_get_current_platform()
     platform.async_register_entity_service(
         SERVICE_SET_SEGMENTS, SET_SEGMENTS_SCHEMA, "async_set_segments"
+    )
+    platform.async_register_entity_service(
+        SERVICE_SET_CUSTOM_EFFECT, SET_CUSTOM_EFFECT_SCHEMA, "async_set_custom_effect"
     )
 
 
@@ -191,6 +207,7 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
         "diy_pat": "integer",
         PROP_PER_IC_PAT: "integer",
         **{f"pic{i:02d}": "string" for i in range(PER_IC_SLOTS)},
+        **{f"diy{i:02d}": "string" for i in range(EFFECT_MAX_SLOTS)},
     }
 
     @property
@@ -279,6 +296,42 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
         await self._set(f"pic{int(slot):02d}", payload)
         await self._set(PROP_MODE, MODE_PER_IC)
         await self._set(PROP_PER_IC_PAT, int(slot))
+        await self.coordinator.async_request_refresh()
+
+    async def async_set_custom_effect(
+        self,
+        colors: list[tuple[int, int, int]],
+        style: str = "Tracer",
+        speed: int = 50,
+        brightness: int = 100,
+        name: str = "HA Custom",
+    ) -> None:
+        """Run a custom animated effect on-device from a color palette.
+
+        The bulb animates the palette itself at native refresh (no frame
+        streaming, so no ~6 fps ceiling). ``style`` picks the motion; each style
+        maps to a DIY slot, so this overwrites that slot's stored preset (the
+        same as editing that DIY effect in the app).
+        """
+        slot = DIY_STYLES[style]
+        ca = [
+            {"m": "c", "c": (r << 16) | (g << 8) | b, "cs": 100}
+            for r, g, b in colors
+        ]
+        payload = json.dumps(
+            {
+                "n": name,
+                "v": "2.0",
+                "ca": ca,
+                "b": int(brightness),
+                "reset": False,
+                "s": int(speed),
+            },
+            separators=(",", ":"),
+        )
+        await self._set(f"diy{slot:02d}", payload)
+        await self._set(PROP_MODE, MODE_DIY)
+        await self._set(PROP_DIY_PAT, slot)
         await self.coordinator.async_request_refresh()
 
     @callback
