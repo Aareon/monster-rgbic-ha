@@ -42,7 +42,8 @@
       "cannot_connect": "Could not reach the Monster/Ayla servers.",
       "unknown": "Unexpected error.",
       "regtoken_not_found": "The strip joined Wi-Fi but couldn't be found on the network to finish claiming it. Make sure Home Assistant is on the same network.",
-      "onboard_failed": "Bluetooth onboarding failed. Make sure the strip is in pairing mode and close to a Bluetooth adapter, then try again."
+      "onboard_failed": "Bluetooth onboarding failed. Make sure the strip is in pairing mode and close to a Bluetooth adapter, then try again.",
+      "already_setup": "That strip is already set up on your account — it isn't a new device. (Provisioned strips still advertise for setup.) Factory-reset it first if you want to re-onboard it."
     },
     "abort": {
       "already_configured": "This account is already configured.",

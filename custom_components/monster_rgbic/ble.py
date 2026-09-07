@@ -23,6 +23,11 @@ from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
+
+class AlreadyProvisioned(Exception):
+    """The selected strip is already set up on the account (not a new device)."""
+
+
 # Ayla setup GATT (validated on hardware).
 SERVICE_IDENTITY = "0000fe28-0000-1000-8000-00805f9b34fb"
 CHAR_DSN = "00000001-fe28-435b-991a-f1b21bb9bcd0"
@@ -131,11 +136,17 @@ async def async_onboard(
     security: str,
     timeout: float = 120.0,
     progress: Callable[[str], None] | None = None,
+    known_dsns: set[str] | None = None,
 ) -> str:
     """Provision the strip onto Wi-Fi over BLE. Returns the device DSN.
 
     ``progress``, if given, is called with a phase key ("connecting", "pairing",
     "sending", "joining") as onboarding advances, for UI feedback.
+
+    ``known_dsns`` are DSNs already on the account; if the connected strip is one
+    of them we raise :class:`AlreadyProvisioned` before writing anything (a
+    provisioned strip still advertises the setup service, so this is how we tell
+    it isn't actually a new device).
 
     Raises on failure (device not found, pairing/GATT error, or Wi-Fi join
     timeout).
@@ -181,6 +192,8 @@ async def async_onboard(
                 await asyncio.sleep(1.0)
         if not dsn:
             raise RuntimeError("could not read DSN after pairing")
+        if known_dsns and dsn in known_dsns:
+            raise AlreadyProvisioned(dsn)
 
         connected = asyncio.Event()
 

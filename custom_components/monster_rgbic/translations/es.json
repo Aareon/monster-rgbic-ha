@@ -42,7 +42,8 @@
       "cannot_connect": "No se pudo conectar con los servidores de Monster/Ayla.",
       "unknown": "Error inesperado.",
       "regtoken_not_found": "La tira se conectó al Wi-Fi pero no se pudo encontrar en la red para completar la vinculación. Asegúrate de que Home Assistant esté en la misma red.",
-      "onboard_failed": "Falló la configuración por Bluetooth. Asegúrate de que la tira esté en modo de emparejamiento y cerca de un adaptador Bluetooth, e inténtalo de nuevo."
+      "onboard_failed": "Falló la configuración por Bluetooth. Asegúrate de que la tira esté en modo de emparejamiento y cerca de un adaptador Bluetooth, e inténtalo de nuevo.",
+      "already_setup": "Esa tira ya está configurada en tu cuenta; no es un dispositivo nuevo. (Las tiras ya configuradas siguen anunciándose para la configuración.) Restablécela de fábrica si quieres volver a configurarla."
     },
     "abort": {
       "already_configured": "Esta cuenta ya está configurada.",

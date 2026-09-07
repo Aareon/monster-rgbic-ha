@@ -42,7 +42,8 @@
       "cannot_connect": "Impossible de joindre les serveurs Monster/Ayla.",
       "unknown": "Erreur inattendue.",
       "regtoken_not_found": "La bande s'est connectée au Wi-Fi mais est introuvable sur le réseau pour terminer l'association. Vérifiez que Home Assistant est sur le même réseau.",
-      "onboard_failed": "Échec de la configuration Bluetooth. Assurez-vous que la bande est en mode d'appairage et proche d'un adaptateur Bluetooth, puis réessayez."
+      "onboard_failed": "Échec de la configuration Bluetooth. Assurez-vous que la bande est en mode d'appairage et proche d'un adaptateur Bluetooth, puis réessayez.",
+      "already_setup": "Cette bande est déjà configurée sur votre compte ; ce n'est pas un nouvel appareil. (Les bandes déjà configurées continuent de se signaler pour la configuration.) Réinitialisez-la d'abord si vous voulez la reconfigurer."
     },
     "abort": {
       "already_configured": "Ce compte est déjà configuré.",

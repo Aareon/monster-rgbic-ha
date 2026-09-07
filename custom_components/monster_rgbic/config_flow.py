@@ -160,6 +160,10 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
         session = async_get_clientsession(self.hass)
         api = MonsterAylaApi(session, data["email"], data["password"])
         await api.async_authenticate()
+        try:
+            known = {d.get("dsn") for d in await api.async_get_devices()}
+        except MonsterApiError:
+            known = set()
         return await ble.async_onboard(
             self.hass,
             data["device"],
@@ -167,6 +171,7 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
             data["wifi_password"],
             data["security"],
             progress=lambda phase: _LOGGER.debug("onboard phase: %s", phase),
+            known_dsns=known,
         )
 
     async def async_step_onboard_ble(
@@ -182,6 +187,8 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         try:
             dsn = self._onboard_task.result()
+        except ble.AlreadyProvisioned:
+            self._onboard_error = "already_setup"
         except MonsterAuthError:
             self._onboard_error = "invalid_auth"
         except MonsterApiError:

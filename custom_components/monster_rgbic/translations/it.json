@@ -42,7 +42,8 @@
       "cannot_connect": "Impossibile raggiungere i server Monster/Ayla.",
       "unknown": "Errore imprevisto.",
       "regtoken_not_found": "La striscia si è connessa al Wi-Fi ma non è stata trovata sulla rete per completare l'associazione. Assicurati che Home Assistant sia sulla stessa rete.",
-      "onboard_failed": "Configurazione Bluetooth non riuscita. Assicurati che la striscia sia in modalità di associazione e vicino a un adattatore Bluetooth, poi riprova."
+      "onboard_failed": "Configurazione Bluetooth non riuscita. Assicurati che la striscia sia in modalità di associazione e vicino a un adattatore Bluetooth, poi riprova.",
+      "already_setup": "Questa striscia è già configurata sul tuo account; non è un nuovo dispositivo. (Le strisce già configurate continuano a segnalarsi per la configurazione.) Ripristinala alle impostazioni di fabbrica se vuoi riconfigurarla."
     },
     "abort": {
       "already_configured": "Questo account è già configurato.",
