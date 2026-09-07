@@ -48,6 +48,10 @@
       "already_configured": "This account is already configured.",
       "no_strip_found": "No strip found in pairing mode. Put the strip into setup mode and try again.",
       "device_added": "The new strip was set up and added to your account."
+    },
+    "progress": {
+      "provisioning": "Setting up over Bluetooth — pairing and sending Wi-Fi credentials. The strip can take a minute or two to join.",
+      "claiming": "Finding the strip on your network and claiming it to your account…"
     }
   }
 }

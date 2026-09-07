@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import aiohttp
@@ -127,8 +128,12 @@ async def async_onboard(
     password: str,
     security: str,
     timeout: float = 120.0,
+    progress: Callable[[str], None] | None = None,
 ) -> str:
     """Provision the strip onto Wi-Fi over BLE. Returns the device DSN.
+
+    ``progress``, if given, is called with a phase key ("connecting", "pairing",
+    "sending", "joining") as onboarding advances, for UI feedback.
 
     Raises on failure (device not found, pairing/GATT error, or Wi-Fi join
     timeout).
@@ -137,6 +142,11 @@ async def async_onboard(
     from bleak import BleakClient
     from bleak_retry_connector import establish_connection
 
+    def _p(phase: str) -> None:
+        if progress is not None:
+            progress(phase)
+
+    _p("connecting")
     ble_device = bluetooth.async_ble_device_from_address(hass, address, connectable=True)
     if ble_device is None:
         raise RuntimeError(f"BLE device {address} not found (is it in pairing mode?)")
@@ -145,6 +155,7 @@ async def async_onboard(
         BleakClient, ble_device, f"monster-{address}"
     )
     try:
+        _p("pairing")
         try:
             await client.pair()
         except Exception as err:  # noqa: BLE001 - some backends auto-pair on access
@@ -175,8 +186,10 @@ async def async_onboard(
 
         payload = build_connect_payload(ssid, password, security)
         _LOGGER.info("Writing Wi-Fi credentials to %s (DSN %s)", address, dsn)
+        _p("sending")
         await client.write_gatt_char(CHAR_CONNECT, payload, response=True)
 
+        _p("joining")
         try:
             await asyncio.wait_for(connected.wait(), timeout=timeout)
         except asyncio.TimeoutError as err:

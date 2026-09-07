@@ -48,6 +48,10 @@
       "already_configured": "Esta cuenta ya está configurada.",
       "no_strip_found": "No se encontró ninguna tira en modo de emparejamiento. Pon la tira en modo de configuración e inténtalo de nuevo.",
       "device_added": "La nueva tira se configuró y se añadió a tu cuenta."
+    },
+    "progress": {
+      "provisioning": "Configurando por Bluetooth: emparejando y enviando las credenciales Wi-Fi. La tira puede tardar uno o dos minutos en conectarse.",
+      "claiming": "Buscando la tira en tu red y vinculándola a tu cuenta…"
     }
   }
 }

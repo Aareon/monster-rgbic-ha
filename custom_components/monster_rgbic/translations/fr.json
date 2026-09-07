@@ -48,6 +48,10 @@
       "already_configured": "Ce compte est déjà configuré.",
       "no_strip_found": "Aucune bande trouvée en mode d'appairage. Mettez la bande en mode configuration et réessayez.",
       "device_added": "La nouvelle bande a été configurée et ajoutée à votre compte."
+    },
+    "progress": {
+      "provisioning": "Configuration via Bluetooth : appairage et envoi des identifiants Wi-Fi. La bande peut mettre une à deux minutes à se connecter.",
+      "claiming": "Recherche de la bande sur votre réseau et association à votre compte…"
     }
   }
 }

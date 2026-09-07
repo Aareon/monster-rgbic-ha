@@ -48,6 +48,10 @@
       "already_configured": "Questo account è già configurato.",
       "no_strip_found": "Nessuna striscia trovata in modalità di associazione. Metti la striscia in modalità di configurazione e riprova.",
       "device_added": "La nuova striscia è stata configurata e aggiunta al tuo account."
+    },
+    "progress": {
+      "provisioning": "Configurazione via Bluetooth: associazione e invio delle credenziali Wi-Fi. La striscia può impiegare uno o due minuti per connettersi.",
+      "claiming": "Ricerca della striscia sulla rete e associazione al tuo account…"
     }
   }
 }
