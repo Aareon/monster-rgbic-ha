@@ -3,6 +3,13 @@
     "step": {
       "user": {
         "title": "Monster Smart Lighting",
+        "menu_options": {
+          "account": "Sign in with your Monster account",
+          "onboard": "Set up a new strip over Bluetooth"
+        }
+      },
+      "account": {
+        "title": "Sign in",
         "description": "Sign in with your Monster Smart Lighting app account.",
         "data": {
           "email": "Email",
@@ -12,15 +19,35 @@
         "data_description": {
           "local_control": "Control the bulbs directly on your LAN (fast, works offline). The Monster app can't hold a local session at the same time; falls back to the cloud automatically."
         }
+      },
+      "onboard": {
+        "title": "Set up a new strip over Bluetooth",
+        "description": "Put the strip into pairing mode and keep it near a Home Assistant Bluetooth adapter. Home Assistant will send it your Wi-Fi credentials over Bluetooth, then claim it to your account.",
+        "data": {
+          "email": "Monster account email",
+          "password": "Monster account password",
+          "device": "Strip",
+          "ssid": "Wi-Fi network (SSID)",
+          "wifi_password": "Wi-Fi password",
+          "security": "Wi-Fi security"
+        },
+        "data_description": {
+          "device": "Strips currently advertising for setup.",
+          "ssid": "The 2.4 GHz Wi-Fi network the strip should join."
+        }
       }
     },
     "error": {
       "invalid_auth": "Invalid email or password.",
       "cannot_connect": "Could not reach the Monster/Ayla servers.",
-      "unknown": "Unexpected error."
+      "unknown": "Unexpected error.",
+      "regtoken_not_found": "The strip joined Wi-Fi but couldn't be found on the network to finish claiming it. Make sure Home Assistant is on the same network.",
+      "onboard_failed": "Bluetooth onboarding failed. Make sure the strip is in pairing mode and close to a Bluetooth adapter, then try again."
     },
     "abort": {
-      "already_configured": "This account is already configured."
+      "already_configured": "This account is already configured.",
+      "no_strip_found": "No strip found in pairing mode. Put the strip into setup mode and try again.",
+      "device_added": "The new strip was set up and added to your account."
     }
   }
 }

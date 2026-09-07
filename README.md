@@ -27,6 +27,8 @@ certificate tricks):
 - ✅ **Custom animated effects** — supply a color palette and let the bulb
   animate it on‑device via `monster_rgbic.set_custom_effect` (see below)
 - ✅ **Local (LAN) control** — direct, offline‑capable control (see below)
+- ✅ **Bluetooth onboarding** — set up a brand‑new strip's Wi‑Fi from Home
+  Assistant, no Monster app required (see below)
 - 🔜 White / color‑temperature mode
 
 ## Effects (built‑in scenes)
@@ -171,14 +173,43 @@ several bulbs or strips **of the same model**. Local (LAN) control scales too:
 each bulb gets its own local port (8899, 8900, 8901, …), so any number of bulbs
 can be driven locally at the same time.
 
+## Bluetooth onboarding (no Monster app)
+
+You can provision a **brand‑new** strip's Wi‑Fi straight from Home Assistant —
+the Monster app is not needed at all. This requires a **Bluetooth adapter** on
+your Home Assistant host (the built‑in Bluetooth integration).
+
+1. Put the strip into **pairing/setup mode** (the blinking state it ships in, or
+   after a factory reset) and keep it near the HA Bluetooth adapter.
+2. **Settings → Devices & Services → Add Integration → Monster Smart Lighting**,
+   then choose **"Set up a new strip over Bluetooth."**
+3. Pick the strip, enter your **Wi‑Fi** SSID/password and (if not already set up)
+   your **Monster account** — then submit.
+
+Home Assistant connects over BLE, pairs, sends the Wi‑Fi credentials, waits for
+the strip to join, then claims it to your account.
+
+**What's local vs. cloud:** the Wi‑Fi provisioning and the registration token are
+handled **entirely locally** (BLE + the strip's own LAN endpoint). The final
+device **claim** is the one required call to Ayla's cloud — that's what
+provisions the LAN key used for local control afterward. So this removes the
+Monster app from setup, but not Ayla's cloud (that isn't possible on this
+hardware — the LAN key doesn't exist on the strip until it's claimed).
+
+> The BLE setup protocol (GATT service `1CF0FE66` / `FE28`, a 105‑byte
+> credentials write, Just‑Works pairing) was reverse‑engineered from the app and
+> validated by provisioning real hardware. Only **2.4 GHz** Wi‑Fi is supported by
+> the strips.
+
 ### Adding another bulb later
 
 Devices are discovered **when the integration loads**, so a bulb added after
 setup is **not auto‑detected** — you need one reload:
 
-1. **Pair the new bulb in the Monster app first.** The integration reads your
-   Ayla account; it doesn't do Wi‑Fi onboarding. Adding the bulb in the app puts
-   it on the same account these credentials use.
+1. **Get the new bulb onto your account** — either pair it in the Monster app,
+   or use this integration's **Bluetooth onboarding** (above), which adds it to
+   the same account without the app. Either way it ends up on the account these
+   credentials use.
 2. In Home Assistant, **reload the integration**: Settings → Devices & Services →
    **Monster Smart Lighting** → ⋮ → **Reload** (or restart Home Assistant).
 3. The new bulb appears as its own light entity and device (and gets its own LAN
