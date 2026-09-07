@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Monster Smart Lighting",
+        "description": "Inicia sesión con tu cuenta de la aplicación Monster Smart Lighting.",
+        "data": {
+          "email": "Correo electrónico",
+          "password": "Contraseña",
+          "local_control": "Usar control local (LAN)"
+        },
+        "data_description": {
+          "local_control": "Controla las bombillas directamente en tu red local (rápido y funciona sin conexión). La aplicación Monster no puede mantener una sesión local al mismo tiempo; recurre automáticamente a la nube."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Correo electrónico o contraseña no válidos.",
+      "cannot_connect": "No se pudo conectar con los servidores de Monster/Ayla.",
+      "unknown": "Error inesperado."
+    },
+    "abort": {
+      "already_configured": "Esta cuenta ya está configurada."
+    }
+  }
+}

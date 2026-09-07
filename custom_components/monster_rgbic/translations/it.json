@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Monster Smart Lighting",
+        "description": "Accedi con il tuo account dell'app Monster Smart Lighting.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "local_control": "Usa il controllo locale (LAN)"
+        },
+        "data_description": {
+          "local_control": "Controlla le lampadine direttamente sulla tua rete locale (veloce, funziona offline). L'app Monster non può mantenere una sessione locale contemporaneamente; ripiega automaticamente sul cloud."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Email o password non validi.",
+      "cannot_connect": "Impossibile raggiungere i server Monster/Ayla.",
+      "unknown": "Errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo account è già configurato."
+    }
+  }
+}
