@@ -34,9 +34,6 @@ CHAR_CONNECT_STATUS = "1f80af6c-2b71-4e35-94e5-00f854d8f16f"
 # WifiSecurityType ordinal (from AylaConnectCharacteristic).
 SECURITY = {"none": 0, "wep": 1, "wpa": 2, "wpa2": 3, "wpa3": 4}
 
-# Name prefix Monster/Ayla strips advertise (e.g. "MLED50ls-5e", "MLED30sal-..").
-NAME_PREFIX = "MLED"
-
 # Connect-status byte offsets (validated): [0:32] ssid, [32] ssid_len,
 # [33] state (0x14 connecting -> 0x00 settled), [34] detail/error.
 _STATE_OFFSET = 33
@@ -67,13 +64,18 @@ def build_connect_payload(ssid: str, password: str, security: str) -> bytes:
 
 
 def discover_strips(hass: HomeAssistant) -> list[StripCandidate]:
-    """Return unprovisioned strips currently advertising the setup service."""
+    """Return strips currently advertising the Ayla setup service (pairing mode).
+
+    We match ONLY on the setup service UUID. A provisioned strip still broadcasts
+    its name, so matching on the name would list strips that aren't actually in
+    setup mode. Note HA caches advertisements for a few minutes, so a strip that
+    recently left pairing mode may briefly linger.
+    """
     out: list[StripCandidate] = []
     for info in bluetooth.async_discovered_service_info(hass, connectable=True):
-        name = info.name or ""
         uuids = {u.lower() for u in (info.service_uuids or [])}
-        if SERVICE_IDENTITY in uuids or name.upper().startswith(NAME_PREFIX):
-            out.append(StripCandidate(info.address, name, info.rssi))
+        if SERVICE_IDENTITY in uuids:
+            out.append(StripCandidate(info.address, info.name or "", info.rssi))
     return out
 
 

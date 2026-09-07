@@ -1,7 +1,7 @@
 {
   "domain": "monster_rgbic",
   "name": "Monster Smart Lighting (RGBIC)",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "config_flow": true,
   "iot_class": "cloud_polling",
   "integration_type": "hub",
