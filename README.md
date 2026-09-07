@@ -20,10 +20,35 @@ certificate tricks):
 - ✅ On / off
 - ✅ Brightness
 - ✅ RGB color
+- ✅ **Effects** — the bulb's built‑in scenes (Rainbow, Fire, Confetti…), exposed
+  as a Home Assistant effect list (see below)
 - ✅ **Local (LAN) control** — direct, offline‑capable control (see below)
-- 🔜 Effects (Rainbow, Fire, Confetti… — dozens of built‑in scenes)
 - 🔜 White / color‑temperature mode
 - 🔜 Per‑IC control
+
+## Effects (built‑in scenes)
+
+The bulbs ship with banks of built‑in patterns — **static** looks (Candle,
+Neon, Patriotic…), **dynamic** animations (Rainbow, Fire, Confetti, Vortex…),
+**music‑reactive** modes (Soundwave, Equalizer…), and your **DIY** scenes from
+the app. The integration reads these banks straight off each device and exposes
+them as Home Assistant's standard **effect list** on the light card, labelled by
+family (e.g. `Dynamic: Rainbow`, `Static: Candle`, `Music: Soundwave 1`,
+`DIY: Blink`).
+
+Pick one from the effect dropdown, or set it in an automation:
+
+```yaml
+service: light.turn_on
+target:
+  entity_id: light.xtreme_rgbic_ls_1
+data:
+  effect: "Dynamic: Rainbow"
+```
+
+The scene list is read per device, so DIY scenes (and any you've renamed in the
+app) show up with their current names. Selecting an RGB color switches the bulb
+back to solid‑colour mode.
 
 ## Local (LAN) control
 

@@ -37,5 +37,22 @@ PROP_COLOR_SAT = "color_saturation"  # int 0-100
 
 MODE_COLOR = "color"
 
+# --- Effects (built-in scenes) ---
+# The bulb groups its patterns into "mode" families; within a family a
+# <family>_pat integer selects which slot plays. Each slot is a property
+# (e.g. "dyn03") whose JSON value carries the scene's display name in "n".
+# Verified live: setting mode + <family>_pat plays the built-in scene, and the
+# _pat index equals the slot number.
+#   mode -> (slot prefix, selector property, human family label)
+EFFECT_FAMILIES: dict[str, tuple[str, str, str]] = {
+    "static": ("st", "st_pat", "Static"),
+    "dynamic": ("dyn", "dyn_pat", "Dynamic"),
+    "music": ("mus", "mus_pat", "Music"),
+    "diy": ("diy", "diy_pat", "DIY"),
+    "per_ic": ("pic", "per_ic_pat", "Per-IC"),
+}
+# Up to 16 slots per family (00..15).
+EFFECT_MAX_SLOTS = 16
+
 # Ayla session lifetime is ~24h; refresh a bit early.
 DEFAULT_SCAN_INTERVAL = 30  # seconds
