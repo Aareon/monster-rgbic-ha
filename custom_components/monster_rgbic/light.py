@@ -157,13 +157,19 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
     }
 
     async def _set(self, name: str, value: Any) -> None:
-        """Write one property: try LAN first, fall back to the cloud."""
+        """Write one property: try LAN first, fall back to the cloud.
+
+        On success we record the value optimistically, because a LAN write
+        (echo:"none") isn't immediately reflected by the cloud we poll.
+        """
         controller = self.coordinator.lan_controllers.get(self._dsn)
         if controller is not None and controller.available:
             base_type = self._BASE_TYPES.get(name, "integer")
             if await controller.async_set_property(name, value, base_type):
+                self.coordinator.set_optimistic(self._dsn, name, value)
                 return
         await self.coordinator.api.async_set_property(self._dsn, name, value)
+        self.coordinator.set_optimistic(self._dsn, name, value)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on, optionally setting an effect, RGB color, and/or brightness."""
