@@ -151,13 +151,21 @@ async def async_onboard(
     if ble_device is None:
         raise RuntimeError(f"BLE device {address} not found (is it in pairing mode?)")
 
-    client: BleakClient = await establish_connection(
-        BleakClient, ble_device, f"monster-{address}"
-    )
+    try:
+        client: BleakClient = await asyncio.wait_for(
+            establish_connection(BleakClient, ble_device, f"monster-{address}"),
+            timeout=45,
+        )
+    except (asyncio.TimeoutError, Exception) as err:  # noqa: BLE001
+        raise RuntimeError(
+            f"could not connect to {address} over BLE "
+            "(strip still in pairing mode? Bluetooth adapter/proxy in range? "
+            "note: ESPHome BT proxies cannot pair, which this device requires)"
+        ) from err
     try:
         _p("pairing")
         try:
-            await client.pair()
+            await asyncio.wait_for(client.pair(), timeout=30)
         except Exception as err:  # noqa: BLE001 - some backends auto-pair on access
             _LOGGER.debug("pair() note for %s: %s", address, err)
 
@@ -190,13 +198,17 @@ async def async_onboard(
         await client.write_gatt_char(CHAR_CONNECT, payload, response=True)
 
         _p("joining")
+        # The strip can take minutes to associate; don't hold the BLE link that
+        # long (and the status notification is unreliable across BlueZ/proxies).
+        # Wait briefly for the on-device hint, then let the caller confirm the
+        # join over the LAN (async_find_new_strip polling).
         try:
-            await asyncio.wait_for(connected.wait(), timeout=timeout)
-        except asyncio.TimeoutError as err:
-            raise RuntimeError(
-                "strip did not report joining Wi-Fi in time (check credentials)"
-            ) from err
-        _LOGGER.info("Strip %s joined Wi-Fi", dsn)
+            await asyncio.wait_for(connected.wait(), timeout=min(timeout, 20))
+            _LOGGER.info("Strip %s reported joining Wi-Fi", dsn)
+        except asyncio.TimeoutError:
+            _LOGGER.debug(
+                "no BLE join confirmation from %s yet; will confirm via LAN", dsn
+            )
         return dsn
     finally:
         try:

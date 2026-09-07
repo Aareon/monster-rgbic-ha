@@ -204,7 +204,12 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
         data = self._onboard_data
         assert data is not None
         session = async_get_clientsession(self.hass)
-        found = await ble.async_find_new_strip(self.hass, session)
+        found = None
+        for _ in range(48):  # ~4 min: the strip can take minutes to associate
+            found = await ble.async_find_new_strip(self.hass, session)
+            if found:
+                break
+            await asyncio.sleep(5)
         if not found:
             self._onboard_error = "regtoken_not_found"
             return

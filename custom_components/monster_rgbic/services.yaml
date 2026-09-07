@@ -26,7 +26,7 @@ set_segments:
         object:
     background:
       name: Background color
-      description: RGB color for ICs not covered by any segment (default: off).
+      description: "RGB color for ICs not covered by any segment (default: off)."
       required: false
       example: "[0, 0, 0]"
       selector:
