@@ -34,8 +34,15 @@ PROP_BRIGHTNESS = "brightness"      # int 0-100
 PROP_COLOR_SELECT = "color_select"  # int packed R<<16 | G<<8 | B
 PROP_COLOR_BRIGHT = "color_bright"  # int 0-100
 PROP_COLOR_SAT = "color_saturation"  # int 0-100
+PROP_NUM_ICS = "no_of_rgbics"        # int: addressable IC count for this strip
+PROP_MAX_ICS = "max_no_of_rgbics"    # int: hardware max IC count
+PROP_PER_IC_PAT = "per_ic_pat"       # int: which pic slot is active
 
 MODE_COLOR = "color"
+MODE_PER_IC = "per_ic"
+
+# Per-IC preset slots (custom "paint each IC" presets), pic00..pic04.
+PER_IC_SLOTS = 5
 
 # --- Effects (built-in scenes) ---
 # The bulb groups its patterns into "mode" families; within a family a

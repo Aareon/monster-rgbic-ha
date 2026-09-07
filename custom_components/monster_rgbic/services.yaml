@@ -1,0 +1,60 @@
+set_segments:
+  name: Set per-IC segments
+  description: >-
+    Paint sections of an RGBIC strip by IC index (a custom "per-IC" preset) and
+    activate it. Each segment colors an inclusive range of ICs; ICs left
+    uncovered are turned off unless a background color is given.
+  target:
+    entity:
+      integration: monster_rgbic
+      domain: light
+  fields:
+    segments:
+      name: Segments
+      description: >-
+        List of segments, each with start and end IC index (0-based, inclusive)
+        and an rgb color, e.g. [{ "start": 0, "end": 7, "rgb": [255, 0, 0] }].
+      required: true
+      example: |-
+        - start: 0
+          end: 14
+          rgb: [255, 0, 0]
+        - start: 15
+          end: 29
+          rgb: [0, 0, 255]
+      selector:
+        object:
+    background:
+      name: Background color
+      description: RGB color for ICs not covered by any segment (default: off).
+      required: false
+      example: "[0, 0, 0]"
+      selector:
+        color_rgb:
+    brightness:
+      name: Brightness
+      description: Preset brightness (1-100).
+      required: false
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: slider
+    slot:
+      name: Preset slot
+      description: Which per-IC preset slot to store this in (0-4).
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 4
+          mode: box
+    name:
+      name: Preset name
+      description: Name to store the preset under.
+      required: false
+      default: HA Custom
+      selector:
+        text:

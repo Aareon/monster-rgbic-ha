@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import voluptuous as vol
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_EFFECT,
@@ -14,24 +15,55 @@ from homeassistant.components.light import (
     LightEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import MonsterConfigEntry
+from . import peric
 from .const import (
     DOMAIN,
     EFFECT_FAMILIES,
     EFFECT_MAX_SLOTS,
     MODE_COLOR,
+    MODE_PER_IC,
+    PER_IC_SLOTS,
     PROP_BRIGHTNESS,
     PROP_COLOR_BRIGHT,
     PROP_COLOR_SAT,
     PROP_COLOR_SELECT,
+    PROP_MAX_ICS,
     PROP_MODE,
+    PROP_NUM_ICS,
+    PROP_PER_IC_PAT,
     PROP_POWER,
 )
 from .coordinator import MonsterCoordinator
+
+SERVICE_SET_SEGMENTS = "set_segments"
+_RGB = vol.All(
+    vol.ExactSequence([vol.All(vol.Coerce(int), vol.Range(min=0, max=255))] * 3),
+    vol.Coerce(tuple),
+)
+_SEGMENT = vol.Schema(
+    {
+        vol.Required("start"): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Required("end"): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Required("rgb"): _RGB,
+    }
+)
+SET_SEGMENTS_SCHEMA = {
+    vol.Required("segments"): vol.All(cv.ensure_list, [_SEGMENT], vol.Length(min=1)),
+    vol.Optional("background"): _RGB,
+    vol.Optional("brightness", default=100): vol.All(
+        vol.Coerce(int), vol.Range(min=1, max=100)
+    ),
+    vol.Optional("slot", default=0): vol.All(
+        vol.Coerce(int), vol.Range(min=0, max=PER_IC_SLOTS - 1)
+    ),
+    vol.Optional("name", default="HA Custom"): cv.string,
+}
 
 
 async def async_setup_entry(
@@ -43,6 +75,10 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     async_add_entities(
         MonsterLight(coordinator, dsn) for dsn in coordinator.devices
+    )
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service(
+        SERVICE_SET_SEGMENTS, SET_SEGMENTS_SCHEMA, "async_set_segments"
     )
 
 
@@ -153,8 +189,18 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
         "dyn_pat": "integer",
         "mus_pat": "integer",
         "diy_pat": "integer",
-        "per_ic_pat": "integer",
+        PROP_PER_IC_PAT: "integer",
+        **{f"pic{i:02d}": "string" for i in range(PER_IC_SLOTS)},
     }
+
+    @property
+    def _ic_count(self) -> int:
+        """Number of addressable ICs on this strip (falls back sensibly)."""
+        for key in (PROP_NUM_ICS, PROP_MAX_ICS):
+            val = self._props.get(key)
+            if val:
+                return int(val)
+        return 45
 
     async def _set(self, name: str, value: Any) -> None:
         """Write one property: try LAN first, fall back to the cloud.
@@ -197,6 +243,42 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
         await self._set(PROP_POWER, 0)
+        await self.coordinator.async_request_refresh()
+
+    async def async_set_segments(
+        self,
+        segments: list[dict[str, Any]],
+        brightness: int = 100,
+        slot: int = 0,
+        name: str = "HA Custom",
+        background: tuple[int, int, int] | None = None,
+    ) -> None:
+        """Paint per-IC segments (custom preset) and activate it.
+
+        Each segment is ``{start, end, rgb}`` over 0-indexed ICs (inclusive).
+        ICs not covered by any segment take ``background`` (default: off). The
+        result is written to a ``picNN`` slot and selected via per-IC mode.
+        """
+        n = self._ic_count
+        colors: list[peric.Color | None] = [background] * n
+        for seg in segments:
+            rgb = tuple(seg["rgb"])
+            for i in range(max(0, seg["start"]), min(n - 1, seg["end"]) + 1):
+                colors[i] = rgb  # type: ignore[assignment]
+
+        payload = json.dumps(
+            {
+                "reset": False,
+                "b": int(brightness),
+                "n": name,
+                "ca_b64": peric.encode(colors),
+                "v": "2.1",
+            },
+            separators=(",", ":"),
+        )
+        await self._set(f"pic{int(slot):02d}", payload)
+        await self._set(PROP_MODE, MODE_PER_IC)
+        await self._set(PROP_PER_IC_PAT, int(slot))
         await self.coordinator.async_request_refresh()
 
     @callback

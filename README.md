@@ -22,9 +22,10 @@ certificate tricks):
 - ✅ RGB color
 - ✅ **Effects** — the bulb's built‑in scenes (Rainbow, Fire, Confetti…), exposed
   as a Home Assistant effect list (see below)
+- ✅ **Per‑IC segments** — paint sections of the strip by IC index via the
+  `monster_rgbic.set_segments` service (see below)
 - ✅ **Local (LAN) control** — direct, offline‑capable control (see below)
 - 🔜 White / color‑temperature mode
-- 🔜 Per‑IC control
 
 ## Effects (built‑in scenes)
 
@@ -49,6 +50,38 @@ data:
 The scene list is read per device, so DIY scenes (and any you've renamed in the
 app) show up with their current names. Selecting an RGB color switches the bulb
 back to solid‑colour mode.
+
+## Per‑IC segments (custom presets)
+
+RGBIC strips can address each LED "IC" individually. This integration exposes
+that through the **`monster_rgbic.set_segments`** service: you give it a list of
+segments — each an inclusive range of IC indices and an RGB color — and it
+paints them, stores the result as one of the strip's per‑IC presets, and
+activates it. ICs you don't cover turn off (or take a `background` color).
+
+```yaml
+service: monster_rgbic.set_segments
+target:
+  entity_id: light.xtreme_rgbic_ls_1
+data:
+  segments:
+    - start: 0
+      end: 14
+      rgb: [255, 0, 0]     # first 15 ICs red
+    - start: 15
+      end: 29
+      rgb: [0, 0, 255]     # next 15 ICs blue
+  background: [0, 0, 0]     # remaining ICs off (optional)
+  brightness: 100           # optional, 1-100
+  slot: 0                   # optional, which preset slot (0-4)
+  name: "HA Custom"         # optional
+```
+
+IC indices are 0‑based; the strip's IC count is read from the device
+(`no_of_rgbics`). The preset is stored in slot `0` (`pic00`) by default, so it
+also shows up in the effect dropdown as `Per-IC: <name>` for one‑tap re‑use.
+The encoding was reverse‑engineered from a captured preset and is reproduced
+byte‑for‑byte.
 
 ## Local (LAN) control
 
