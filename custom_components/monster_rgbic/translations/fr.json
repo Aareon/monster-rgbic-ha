@@ -3,6 +3,13 @@
     "step": {
       "user": {
         "title": "Monster Smart Lighting",
+        "menu_options": {
+          "account": "Connectez-vous avec votre compte Monster",
+          "onboard": "Configurer une nouvelle bande via Bluetooth"
+        }
+      },
+      "account": {
+        "title": "Connexion",
         "description": "Connectez-vous avec votre compte de l'application Monster Smart Lighting.",
         "data": {
           "email": "Adresse e-mail",
@@ -12,15 +19,35 @@
         "data_description": {
           "local_control": "Contrôlez les ampoules directement sur votre réseau local (rapide, fonctionne hors ligne). L'application Monster ne peut pas maintenir de session locale en même temps ; le cloud prend automatiquement le relais."
         }
+      },
+      "onboard": {
+        "title": "Configurer une nouvelle bande via Bluetooth",
+        "description": "Mettez la bande en mode d'appairage et gardez-la près d'un adaptateur Bluetooth de Home Assistant. Home Assistant lui enverra vos identifiants Wi-Fi via Bluetooth, puis l'associera à votre compte.",
+        "data": {
+          "email": "E-mail du compte Monster",
+          "password": "Mot de passe du compte Monster",
+          "device": "Bande",
+          "ssid": "Réseau Wi-Fi (SSID)",
+          "wifi_password": "Mot de passe Wi-Fi",
+          "security": "Sécurité Wi-Fi"
+        },
+        "data_description": {
+          "device": "Bandes actuellement visibles pour la configuration.",
+          "ssid": "Le réseau Wi-Fi 2,4 GHz auquel la bande doit se connecter."
+        }
       }
     },
     "error": {
       "invalid_auth": "Adresse e-mail ou mot de passe invalide.",
       "cannot_connect": "Impossible de joindre les serveurs Monster/Ayla.",
-      "unknown": "Erreur inattendue."
+      "unknown": "Erreur inattendue.",
+      "regtoken_not_found": "La bande s'est connectée au Wi-Fi mais est introuvable sur le réseau pour terminer l'association. Vérifiez que Home Assistant est sur le même réseau.",
+      "onboard_failed": "Échec de la configuration Bluetooth. Assurez-vous que la bande est en mode d'appairage et proche d'un adaptateur Bluetooth, puis réessayez."
     },
     "abort": {
-      "already_configured": "Ce compte est déjà configuré."
+      "already_configured": "Ce compte est déjà configuré.",
+      "no_strip_found": "Aucune bande trouvée en mode d'appairage. Mettez la bande en mode configuration et réessayez.",
+      "device_added": "La nouvelle bande a été configurée et ajoutée à votre compte."
     }
   }
 }

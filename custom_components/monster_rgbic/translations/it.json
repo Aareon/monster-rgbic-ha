@@ -3,6 +3,13 @@
     "step": {
       "user": {
         "title": "Monster Smart Lighting",
+        "menu_options": {
+          "account": "Accedi con il tuo account Monster",
+          "onboard": "Configura una nuova striscia via Bluetooth"
+        }
+      },
+      "account": {
+        "title": "Accedi",
         "description": "Accedi con il tuo account dell'app Monster Smart Lighting.",
         "data": {
           "email": "Email",
@@ -12,15 +19,35 @@
         "data_description": {
           "local_control": "Controlla le lampadine direttamente sulla tua rete locale (veloce, funziona offline). L'app Monster non può mantenere una sessione locale contemporaneamente; ripiega automaticamente sul cloud."
         }
+      },
+      "onboard": {
+        "title": "Configura una nuova striscia via Bluetooth",
+        "description": "Metti la striscia in modalità di associazione e tienila vicino a un adattatore Bluetooth di Home Assistant. Home Assistant le invierà le credenziali Wi-Fi via Bluetooth e poi la assocerà al tuo account.",
+        "data": {
+          "email": "Email account Monster",
+          "password": "Password account Monster",
+          "device": "Striscia",
+          "ssid": "Rete Wi-Fi (SSID)",
+          "wifi_password": "Password Wi-Fi",
+          "security": "Sicurezza Wi-Fi"
+        },
+        "data_description": {
+          "device": "Strisce attualmente visibili per la configurazione.",
+          "ssid": "La rete Wi-Fi a 2,4 GHz a cui la striscia deve connettersi."
+        }
       }
     },
     "error": {
       "invalid_auth": "Email o password non validi.",
       "cannot_connect": "Impossibile raggiungere i server Monster/Ayla.",
-      "unknown": "Errore imprevisto."
+      "unknown": "Errore imprevisto.",
+      "regtoken_not_found": "La striscia si è connessa al Wi-Fi ma non è stata trovata sulla rete per completare l'associazione. Assicurati che Home Assistant sia sulla stessa rete.",
+      "onboard_failed": "Configurazione Bluetooth non riuscita. Assicurati che la striscia sia in modalità di associazione e vicino a un adattatore Bluetooth, poi riprova."
     },
     "abort": {
-      "already_configured": "Questo account è già configurato."
+      "already_configured": "Questo account è già configurato.",
+      "no_strip_found": "Nessuna striscia trovata in modalità di associazione. Metti la striscia in modalità di configurazione e riprova.",
+      "device_added": "La nuova striscia è stata configurata e aggiunta al tuo account."
     }
   }
 }

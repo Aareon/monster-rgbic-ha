@@ -3,6 +3,13 @@
     "step": {
       "user": {
         "title": "Monster Smart Lighting",
+        "menu_options": {
+          "account": "Inicia sesión con tu cuenta Monster",
+          "onboard": "Configurar una tira nueva por Bluetooth"
+        }
+      },
+      "account": {
+        "title": "Iniciar sesión",
         "description": "Inicia sesión con tu cuenta de la aplicación Monster Smart Lighting.",
         "data": {
           "email": "Correo electrónico",
@@ -12,15 +19,35 @@
         "data_description": {
           "local_control": "Controla las bombillas directamente en tu red local (rápido y funciona sin conexión). La aplicación Monster no puede mantener una sesión local al mismo tiempo; recurre automáticamente a la nube."
         }
+      },
+      "onboard": {
+        "title": "Configurar una tira nueva por Bluetooth",
+        "description": "Pon la tira en modo de emparejamiento y mantenla cerca de un adaptador Bluetooth de Home Assistant. Home Assistant le enviará tus credenciales Wi-Fi por Bluetooth y luego la vinculará a tu cuenta.",
+        "data": {
+          "email": "Correo de la cuenta Monster",
+          "password": "Contraseña de la cuenta Monster",
+          "device": "Tira",
+          "ssid": "Red Wi-Fi (SSID)",
+          "wifi_password": "Contraseña Wi-Fi",
+          "security": "Seguridad Wi-Fi"
+        },
+        "data_description": {
+          "device": "Tiras que se están anunciando para la configuración.",
+          "ssid": "La red Wi-Fi de 2,4 GHz a la que debe conectarse la tira."
+        }
       }
     },
     "error": {
       "invalid_auth": "Correo electrónico o contraseña no válidos.",
       "cannot_connect": "No se pudo conectar con los servidores de Monster/Ayla.",
-      "unknown": "Error inesperado."
+      "unknown": "Error inesperado.",
+      "regtoken_not_found": "La tira se conectó al Wi-Fi pero no se pudo encontrar en la red para completar la vinculación. Asegúrate de que Home Assistant esté en la misma red.",
+      "onboard_failed": "Falló la configuración por Bluetooth. Asegúrate de que la tira esté en modo de emparejamiento y cerca de un adaptador Bluetooth, e inténtalo de nuevo."
     },
     "abort": {
-      "already_configured": "Esta cuenta ya está configurada."
+      "already_configured": "Esta cuenta ya está configurada.",
+      "no_strip_found": "No se encontró ninguna tira en modo de emparejamiento. Pon la tira en modo de configuración e inténtalo de nuevo.",
+      "device_added": "La nueva tira se configuró y se añadió a tu cuenta."
     }
   }
 }
