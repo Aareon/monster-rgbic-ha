@@ -183,6 +183,48 @@ class MonsterAylaApi:
             json={"datapoint": {"value": value}},
         )
 
+    async def async_get_local_regtoken(self, device_ip: str) -> str:
+        """Fetch the registration token directly from the device on the LAN.
+
+        The unprovisioned/unclaimed device serves this unauthenticated at
+        ``http://<ip>/regtoken.json`` (verified on hardware). No cloud involved.
+        """
+        async with self._session.get(
+            f"http://{device_ip}/regtoken.json", timeout=REQUEST_TIMEOUT
+        ) as resp:
+            if resp.status >= 300:
+                raise MonsterApiError(f"regtoken.json failed ({resp.status})")
+            data = await resp.json(content_type=None)
+        token = data.get("regtoken")
+        if not token:
+            raise MonsterApiError("device returned no regtoken")
+        return token
+
+    async def async_register_device(
+        self,
+        dsn: str,
+        regtoken: str,
+        setup_token: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
+    ) -> dict[str, Any]:
+        """Claim a device to the account via Ayla (POST /apiv1/devices.json).
+
+        This is the one irreducible cloud call in local onboarding: it binds the
+        device to the account and causes Ayla to provision the ``lanip_key`` used
+        for LAN control. Payload shape mirrors the app's AylaRegistration.
+        """
+        device: dict[str, Any] = {"dsn": dsn, "regtoken": regtoken}
+        if setup_token:
+            device["setup_token"] = setup_token
+        if latitude is not None and longitude is not None:
+            device["lat"] = latitude
+            device["lng"] = longitude
+        data = await self._ayla_request(
+            "POST", "/apiv1/devices.json", json={"device": device}
+        )
+        return (data or {}).get("device", {}) if isinstance(data, dict) else {}
+
     async def async_get_lan_info(self, dsn: str) -> dict[str, Any]:
         """Return {lanip_key, lanip_key_id, lan_ip} for LAN-mode setup."""
         data = await self._ayla_request("GET", f"/apiv1/dsns/{dsn}/lan.json")
