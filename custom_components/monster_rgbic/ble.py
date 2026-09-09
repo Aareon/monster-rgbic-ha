@@ -21,6 +21,10 @@ import aiohttp
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
 
+# The pairing agent lives in its own module (no future-annotations) so dbus-fast
+# reads its @method() signature strings correctly.
+from ._ble_agent import register_pairing_agent, unregister_pairing_agent
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -43,6 +47,7 @@ SECURITY = {"none": 0, "wep": 1, "wpa": 2, "wpa2": 3, "wpa3": 4}
 # Connect-status byte offsets (validated): [0:32] ssid, [32] ssid_len,
 # [33] state (0x14 connecting -> 0x00 settled), [34] detail/error.
 _STATE_OFFSET = 33
+
 
 
 @dataclass
@@ -183,6 +188,7 @@ async def async_onboard(
             "(strip still in pairing mode? Bluetooth adapter/proxy in range? "
             "note: ESPHome BT proxies cannot pair, which this device requires)"
         ) from err
+    agent_handle = await register_pairing_agent()
     try:
         _p("pairing")
         try:
@@ -193,7 +199,11 @@ async def async_onboard(
         dsn = ""
         for _ in range(4):
             try:
-                dsn = (await client.read_gatt_char(CHAR_DSN)).decode(errors="replace")
+                dsn = (
+                    await asyncio.wait_for(
+                        client.read_gatt_char(CHAR_DSN), timeout=10
+                    )
+                ).decode(errors="replace")
                 break
             except Exception as err:  # noqa: BLE001
                 _LOGGER.debug("DSN read retry: %s", err)
@@ -222,8 +232,11 @@ async def async_onboard(
                 raise ValueError("setup_token must be <= 8 characters")
             _LOGGER.debug("Writing setup token to %s", address)
             try:
-                await client.write_gatt_char(
-                    CHAR_SETUP_TOKEN, setup_token.encode(), response=True
+                await asyncio.wait_for(
+                    client.write_gatt_char(
+                        CHAR_SETUP_TOKEN, setup_token.encode(), response=True
+                    ),
+                    timeout=15,
                 )
             except Exception as err:  # noqa: BLE001
                 _LOGGER.debug("setup token write note for %s: %s", address, err)
@@ -231,7 +244,9 @@ async def async_onboard(
         payload = build_connect_payload(ssid, password, security)
         _LOGGER.info("Writing Wi-Fi credentials to %s (DSN %s)", address, dsn)
         _p("sending")
-        await client.write_gatt_char(CHAR_CONNECT, payload, response=True)
+        await asyncio.wait_for(
+            client.write_gatt_char(CHAR_CONNECT, payload, response=True), timeout=15
+        )
 
         _p("joining")
         # The strip can take minutes to associate; don't hold the BLE link that
@@ -247,6 +262,7 @@ async def async_onboard(
             )
         return dsn
     finally:
+        await unregister_pairing_agent(agent_handle)
         try:
             await client.disconnect()
         except Exception:  # noqa: BLE001
