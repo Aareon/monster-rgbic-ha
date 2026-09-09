@@ -186,8 +186,16 @@ your Home Assistant host (the built‑in Bluetooth integration).
 3. Pick the strip, enter your **Wi‑Fi** SSID/password and (if not already set up)
    your **Monster account** — then submit.
 
-Home Assistant connects over BLE, pairs, sends the Wi‑Fi credentials, waits for
-the strip to join, then claims it to your account.
+Home Assistant connects over BLE, pairs, sends the Wi‑Fi credentials (with an
+8‑character setup token), waits for the strip to join, confirms it has checked in
+to Ayla (the `connected.json` gate), then claims it to your account.
+
+> **After onboarding, the strip flashes in pairing mode until it receives one
+> command.** A freshly‑claimed strip (and any strip after a **power‑cycle**) boots
+> into `mode:'pair'` — flashing, ignoring commands — until it gets a single control
+> command. Toggle it or set a color from Home Assistant once and it snaps into
+> normal operation. If a strip is stuck flashing after a power loss, that first HA
+> command (or an automation) wakes it.
 
 **What's local vs. cloud:** the Wi‑Fi provisioning and the registration token are
 handled **entirely locally** (BLE + the strip's own LAN endpoint). The final

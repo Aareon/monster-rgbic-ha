@@ -32,6 +32,7 @@ class AlreadyProvisioned(Exception):
 SERVICE_IDENTITY = "0000fe28-0000-1000-8000-00805f9b34fb"
 CHAR_DSN = "00000001-fe28-435b-991a-f1b21bb9bcd0"
 CHAR_OEM_MODEL = "00000003-fe28-435b-991a-f1b21bb9bcd0"
+CHAR_SETUP_TOKEN = "7e9869ed-4db3-4520-88ea-1c21ef1ba834"
 SERVICE_WIFI = "1cf0fe66-3ecf-4d6e-a9fc-e287ab124b96"
 CHAR_CONNECT = "1f80af6a-2b71-4e35-94e5-00f854d8f16f"
 CHAR_CONNECT_STATUS = "1f80af6c-2b71-4e35-94e5-00f854d8f16f"
@@ -137,11 +138,18 @@ async def async_onboard(
     timeout: float = 120.0,
     progress: Callable[[str], None] | None = None,
     known_dsns: set[str] | None = None,
+    setup_token: str | None = None,
 ) -> str:
     """Provision the strip onto Wi-Fi over BLE. Returns the device DSN.
 
     ``progress``, if given, is called with a phase key ("connecting", "pairing",
     "sending", "joining") as onboarding advances, for UI feedback.
+
+    ``setup_token`` (<= 8 chars — the Ayla SDK rejects longer) is written to the
+    setup-token characteristic before the Wi-Fi credentials. The device reports it
+    to Ayla when it connects, which is what lets the account then claim it (poll
+    ``connected.json`` + register with the same token). Omitting it makes the
+    device fall back to regtoken-only registration.
 
     ``known_dsns`` are DSNs already on the account; if the connected strip is one
     of them we raise :class:`AlreadyProvisioned` before writing anything (a
@@ -206,6 +214,19 @@ async def async_onboard(
             await client.start_notify(CHAR_CONNECT_STATUS, _on_status)
         except Exception as err:  # noqa: BLE001
             _LOGGER.debug("status notify unavailable: %s", err)
+
+        # Write the setup token first so the device reports it to Ayla on connect,
+        # making it a claimable registration candidate. Must be <= 8 chars.
+        if setup_token:
+            if len(setup_token) > 8:
+                raise ValueError("setup_token must be <= 8 characters")
+            _LOGGER.debug("Writing setup token to %s", address)
+            try:
+                await client.write_gatt_char(
+                    CHAR_SETUP_TOKEN, setup_token.encode(), response=True
+                )
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.debug("setup token write note for %s: %s", address, err)
 
         payload = build_connect_payload(ssid, password, security)
         _LOGGER.info("Writing Wi-Fi credentials to %s (DSN %s)", address, dsn)

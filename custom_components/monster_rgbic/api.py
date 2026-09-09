@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 import uuid
 from typing import Any
+from urllib.parse import urlencode
 
 import aiohttp
 
@@ -31,6 +33,12 @@ class MonsterAuthError(Exception):
 
 class MonsterApiError(Exception):
     """Raised on a non-auth API failure."""
+
+
+class MonsterNotReadyError(MonsterApiError):
+    """Raised on a 404 — during onboarding this means the device is not yet a
+    registration candidate (it hasn't finished checking in to Ayla). Callers in
+    the onboarding flow retry on this; other callers treat it as a normal error."""
 
 
 class MonsterAylaApi:
@@ -151,6 +159,9 @@ class MonsterAylaApi:
                 return await self._ayla_request(
                     method, path, json=json, _retry=False
                 )
+            if resp.status == 404:
+                # In onboarding, a 404 means "not a registration candidate yet".
+                raise MonsterNotReadyError(f"{method} {path} not ready (404)")
             if resp.status >= 300:
                 raise MonsterApiError(f"{method} {path} failed ({resp.status})")
             if resp.status == 204 or resp.content_length == 0:
@@ -200,6 +211,35 @@ class MonsterAylaApi:
             raise MonsterApiError("device returned no regtoken")
         return token
 
+    async def async_confirm_connected(
+        self,
+        dsn: str,
+        setup_token: str | None = None,
+        timeout: float = 120.0,
+        interval: float = 2.0,
+    ) -> bool:
+        """Poll until the device has checked in to Ayla, then return True.
+
+        Mirrors the app's ``AylaSetup.confirmDeviceConnected`` gate: it polls
+        ``GET /apiv1/devices/connected.json?dsn=&setup_token=`` (returns 404 until
+        the device reports in) and only once it succeeds is the device a valid
+        registration candidate. Skipping this is why naive claims 404 forever.
+        Returns False if the device never checks in within ``timeout``.
+        """
+        query = {"dsn": dsn}
+        if setup_token:
+            query["setup_token"] = setup_token
+        path = "/apiv1/devices/connected.json?" + urlencode(query)
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                await self._ayla_request("GET", path)
+                return True
+            except MonsterNotReadyError:
+                if time.monotonic() >= deadline:
+                    return False
+                await asyncio.sleep(interval)
+
     async def async_register_device(
         self,
         dsn: str,
@@ -207,12 +247,18 @@ class MonsterAylaApi:
         setup_token: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
+        retry_timeout: float = 90.0,
+        retry_interval: float = 5.0,
     ) -> dict[str, Any]:
         """Claim a device to the account via Ayla (POST /apiv1/devices.json).
 
         This is the one irreducible cloud call in local onboarding: it binds the
         device to the account and causes Ayla to provision the ``lanip_key`` used
         for LAN control. Payload shape mirrors the app's AylaRegistration.
+
+        Like the app, retry on 404 (``MonsterNotReadyError``) up to
+        ``retry_timeout`` — there is a brief window between the device checking in
+        and it becoming registerable.
         """
         device: dict[str, Any] = {"dsn": dsn, "regtoken": regtoken}
         if setup_token:
@@ -220,9 +266,17 @@ class MonsterAylaApi:
         if latitude is not None and longitude is not None:
             device["lat"] = latitude
             device["lng"] = longitude
-        data = await self._ayla_request(
-            "POST", "/apiv1/devices.json", json={"device": device}
-        )
+        deadline = time.monotonic() + retry_timeout
+        while True:
+            try:
+                data = await self._ayla_request(
+                    "POST", "/apiv1/devices.json", json={"device": device}
+                )
+                break
+            except MonsterNotReadyError:
+                if time.monotonic() >= deadline:
+                    raise
+                await asyncio.sleep(retry_interval)
         return (data or {}).get("device", {}) if isinstance(data, dict) else {}
 
     async def async_get_lan_info(self, dsn: str) -> dict[str, Any]:

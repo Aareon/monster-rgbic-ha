@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import secrets
 from typing import Any
 
 import voluptuous as vol
@@ -164,6 +165,11 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
             known = {d.get("dsn") for d in await api.async_get_devices()}
         except MonsterApiError:
             known = set()
+        # Generate the setup token BEFORE provisioning: it's written to the device
+        # over BLE and reused to claim it. Must be <= 8 chars (Ayla SDK limit);
+        # token_hex(4) = 8 hex chars.
+        setup_token = secrets.token_hex(4)
+        data["setup_token"] = setup_token
         return await ble.async_onboard(
             self.hass,
             data["device"],
@@ -172,6 +178,7 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
             data["security"],
             progress=lambda phase: _LOGGER.debug("onboard phase: %s", phase),
             known_dsns=known,
+            setup_token=setup_token,
         )
 
     async def async_step_onboard_ble(
@@ -222,7 +229,14 @@ class MonsterConfigFlow(ConfigFlow, domain=DOMAIN):
             return
         _ip, regtoken = found
         api = MonsterAylaApi(session, data["email"], data["password"])
-        await api.async_register_device(data["dsn"], regtoken)
+        # Gate on the device checking in to Ayla before claiming (the app's step);
+        # without it the claim 404s until the device happens to be ready.
+        setup_token = data.get("setup_token")
+        if not await api.async_confirm_connected(data["dsn"], setup_token):
+            # Joined Wi-Fi but never reached Ayla's cloud to register.
+            self._onboard_error = "cannot_connect"
+            return
+        await api.async_register_device(data["dsn"], regtoken, setup_token=setup_token)
 
     async def async_step_onboard_claim(
         self, user_input: dict[str, Any] | None = None
