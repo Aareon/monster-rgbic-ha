@@ -34,12 +34,26 @@ PROP_BRIGHTNESS = "brightness"      # int 0-100
 PROP_COLOR_SELECT = "color_select"  # int packed R<<16 | G<<8 | B
 PROP_COLOR_BRIGHT = "color_bright"  # int 0-100
 PROP_COLOR_SAT = "color_saturation"  # int 0-100
+PROP_COLOR_TEMP = "color_temp"      # int 0-100 tunable-white position (see below)
 PROP_NUM_ICS = "no_of_rgbics"        # int: addressable IC count for this strip
 PROP_MAX_ICS = "max_no_of_rgbics"    # int: hardware max IC count
 PROP_PER_IC_PAT = "per_ic_pat"       # int: which pic slot is active
 
 MODE_COLOR = "color"
+MODE_WHITE = "white"
 MODE_PER_IC = "per_ic"
+
+# --- Tunable white (color temperature) ---
+# The device carries a `color_temp` integer 0-100 that positions the white point.
+# Ayla exposes no Kelvin metadata, so we map that 0-100 onto a standard tunable-
+# white Kelvin span for Home Assistant. WHITE_CT_WARM_AT_ZERO says which end of the
+# device scale is warm: if True, device 0 = warmest (MIN_KELVIN) and 100 = coolest
+# (MAX_KELVIN). Flip it if hardware testing shows the ends are reversed.
+WHITE_MIN_KELVIN = 2700
+WHITE_MAX_KELVIN = 6500
+WHITE_CT_MIN = 0
+WHITE_CT_MAX = 100
+WHITE_CT_WARM_AT_ZERO = True
 
 # Per-IC preset slots (custom "paint each IC" presets), pic00..pic04.
 PER_IC_SLOTS = 5

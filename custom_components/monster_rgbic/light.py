@@ -8,6 +8,7 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_EFFECT,
     ATTR_RGB_COLOR,
     ColorMode,
@@ -30,17 +31,24 @@ from .const import (
     MODE_COLOR,
     MODE_DIY,
     MODE_PER_IC,
+    MODE_WHITE,
     PER_IC_SLOTS,
     PROP_BRIGHTNESS,
     PROP_COLOR_BRIGHT,
     PROP_COLOR_SAT,
     PROP_COLOR_SELECT,
+    PROP_COLOR_TEMP,
     PROP_DIY_PAT,
     PROP_MAX_ICS,
     PROP_MODE,
     PROP_NUM_ICS,
     PROP_PER_IC_PAT,
     PROP_POWER,
+    WHITE_CT_MAX,
+    WHITE_CT_MIN,
+    WHITE_CT_WARM_AT_ZERO,
+    WHITE_MAX_KELVIN,
+    WHITE_MIN_KELVIN,
 )
 from .coordinator import MonsterCoordinator
 
@@ -103,9 +111,10 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
 
     _attr_has_entity_name = True
     _attr_name = None  # entity takes the device's name
-    _attr_supported_color_modes = {ColorMode.RGB}
-    _attr_color_mode = ColorMode.RGB
+    _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}
     _attr_supported_features = LightEntityFeature.EFFECT
+    _attr_min_color_temp_kelvin = WHITE_MIN_KELVIN
+    _attr_max_color_temp_kelvin = WHITE_MAX_KELVIN
 
     def __init__(self, coordinator: MonsterCoordinator, dsn: str) -> None:
         super().__init__(coordinator)
@@ -149,6 +158,40 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
             return None
         packed = int(val)
         return ((packed >> 16) & 0xFF, (packed >> 8) & 0xFF, packed & 0xFF)
+
+    @property
+    def color_mode(self) -> ColorMode:
+        """Report tunable-white vs RGB based on the device's active mode."""
+        if self._props.get(PROP_MODE) == MODE_WHITE:
+            return ColorMode.COLOR_TEMP
+        return ColorMode.RGB
+
+    @staticmethod
+    def _ct_to_kelvin(ct: int) -> int:
+        """Device color_temp (0-100) -> Kelvin."""
+        span = WHITE_CT_MAX - WHITE_CT_MIN
+        frac = (max(WHITE_CT_MIN, min(WHITE_CT_MAX, ct)) - WHITE_CT_MIN) / span
+        if WHITE_CT_WARM_AT_ZERO:  # 0 = warm, so frac 0 -> min Kelvin
+            kelvin = WHITE_MIN_KELVIN + frac * (WHITE_MAX_KELVIN - WHITE_MIN_KELVIN)
+        else:  # 0 = cool
+            kelvin = WHITE_MAX_KELVIN - frac * (WHITE_MAX_KELVIN - WHITE_MIN_KELVIN)
+        return round(kelvin)
+
+    @staticmethod
+    def _kelvin_to_ct(kelvin: int) -> int:
+        """Kelvin -> device color_temp (0-100)."""
+        k = max(WHITE_MIN_KELVIN, min(WHITE_MAX_KELVIN, kelvin))
+        frac = (k - WHITE_MIN_KELVIN) / (WHITE_MAX_KELVIN - WHITE_MIN_KELVIN)
+        if not WHITE_CT_WARM_AT_ZERO:  # 0 = cool, so warm Kelvin -> high ct
+            frac = 1.0 - frac
+        return round(WHITE_CT_MIN + frac * (WHITE_CT_MAX - WHITE_CT_MIN))
+
+    @property
+    def color_temp_kelvin(self) -> int | None:
+        val = self._props.get(PROP_COLOR_TEMP)
+        if val is None:
+            return None
+        return self._ct_to_kelvin(int(val))
 
     def _effect_map(self) -> dict[str, tuple[str, str, int]]:
         """Build ``label -> (mode, selector_property, slot_index)`` from the
@@ -201,6 +244,7 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
         PROP_COLOR_SELECT: "integer",
         PROP_COLOR_BRIGHT: "integer",
         PROP_COLOR_SAT: "integer",
+        PROP_COLOR_TEMP: "integer",
         "st_pat": "integer",
         "dyn_pat": "integer",
         "mus_pat": "integer",
@@ -243,6 +287,11 @@ class MonsterLight(CoordinatorEntity[MonsterCoordinator], LightEntity):
                 # Switch to the scene family, then select the slot.
                 await self._set(PROP_MODE, mode)
                 await self._set(pat_prop, idx)
+        elif ATTR_COLOR_TEMP_KELVIN in kwargs:
+            ct = self._kelvin_to_ct(kwargs[ATTR_COLOR_TEMP_KELVIN])
+            # Switch to tunable-white mode, then set the white point.
+            await self._set(PROP_MODE, MODE_WHITE)
+            await self._set(PROP_COLOR_TEMP, ct)
         elif ATTR_RGB_COLOR in kwargs:
             r, g, b = kwargs[ATTR_RGB_COLOR]
             # Switch to solid-color mode, then set the packed color.

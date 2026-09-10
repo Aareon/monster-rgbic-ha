@@ -20,6 +20,7 @@ certificate tricks):
 - ✅ On / off
 - ✅ Brightness
 - ✅ RGB color
+- ✅ Color temperature (tunable white, ~2700–6500 K)
 - ✅ **Effects** — the bulb's built‑in scenes (Rainbow, Fire, Confetti…), exposed
   as a Home Assistant effect list (see below)
 - ✅ **Per‑IC segments** — paint sections of the strip by IC index via the
