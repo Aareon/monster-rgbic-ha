@@ -30,7 +30,6 @@ certificate tricks):
 - ✅ **Local (LAN) control** — direct, offline‑capable control (see below)
 - ✅ **Bluetooth onboarding** — set up a brand‑new strip's Wi‑Fi from Home
   Assistant, no Monster app required (see below)
-- 🔜 White / color‑temperature mode
 
 ## Effects (built‑in scenes)
 
