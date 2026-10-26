@@ -46,6 +46,16 @@ _LOGGER = logging.getLogger(__name__)
 BASE_PORT = 8899
 REG_TIMEOUT = aiohttp.ClientTimeout(total=10)
 
+# A bulb that is still finishing the last command, or whose session has lapsed, answers the
+# notify PUT with 503. Retry briefly, then re-register once (fresh key exchange), and only then
+# give up and let the cloud have it.
+BUSY_RETRIES = 2
+BUSY_BACKOFF = 0.25  # seconds between retries
+REKEY_WAIT = 2.0  # seconds to wait for the bulb's new key exchange after re-registering
+# After a write failed even after that, send everything through the cloud for a while, so one
+# command's properties do not split between the LAN and the cloud and land out of order.
+COOLDOWN = 20.0  # seconds
+
 
 def _rand_token(n: int) -> str:
     alphabet = string.ascii_letters + string.digits
@@ -104,21 +114,29 @@ class MonsterLanController:
     """Manages a LAN session with one Monster RGBIC bulb."""
 
     def __init__(self, api: Any, dsn: str, device_ip: str | None = None,
-                 port: int = BASE_PORT) -> None:
+                 port: int = BASE_PORT, device_port: int = 80) -> None:
         self._api = api  # MonsterAylaApi, used only to fetch the lanip_key
         self._dsn = dsn
         self._device_ip = device_ip
         self._port = port
+        self._device_port = device_port  # the bulb's own HTTP port (80; tests use another)
         self._session: _Session | None = None
         self._runner: web.AppRunner | None = None
         self._local_ip: str | None = None
         self._pending: tuple[str, Any, str] | None = None
         self._served = asyncio.Event()
+        self._rekeyed = asyncio.Event()
         self._lock = asyncio.Lock()
+        self._last_status: int | None = None  # HTTP status of the last local_reg call
+        self._cooldown_until = 0.0
 
     @property
     def available(self) -> bool:
-        return self._session is not None and self._session.active
+        return (
+            self._session is not None
+            and self._session.active
+            and time.monotonic() >= self._cooldown_until
+        )
 
     # ---- lifecycle ----------------------------------------------------
 
@@ -172,17 +190,48 @@ class MonsterLanController:
         if not self.available:
             return False
         async with self._lock:
+            if await self._push(name, value, base_type):
+                return True
+            # Busy or lapsed: re-register once (a fresh key exchange), then try again.
+            if await self._reregister() and await self._push(name, value, base_type):
+                return True
+            self._cooldown_until = time.monotonic() + COOLDOWN
+            _LOGGER.warning(
+                "Bulb %s did not take a LAN write (last status %s) even after re-registering; "
+                "using the cloud for %.0f s",
+                self._dsn, self._last_status, COOLDOWN,
+            )
+            return False
+
+    async def _push(self, name: str, value: Any, base_type: str) -> bool:
+        """Notify the bulb and serve the one pending property; retry while it answers 503."""
+        for attempt in range(1 + BUSY_RETRIES):
             self._pending = (name, value, base_type)
             self._served.clear()
-            if not await self._register(1, "put"):  # notify -> bulb polls
-                self._pending = None
+            if await self._register(1, "put"):  # notify -> bulb polls
+                try:
+                    await asyncio.wait_for(self._served.wait(), timeout=5)
+                    return True
+                except asyncio.TimeoutError:
+                    self._pending = None
+                    return False
+            self._pending = None
+            if self._last_status != 503:
                 return False
-            try:
-                await asyncio.wait_for(self._served.wait(), timeout=5)
-            except asyncio.TimeoutError:
-                self._pending = None
-                return False
-            return True
+            if attempt < BUSY_RETRIES:
+                await asyncio.sleep(BUSY_BACKOFF)
+        return False
+
+    async def _reregister(self) -> bool:
+        """Register again with notify 0 and wait for the bulb's new key exchange."""
+        self._rekeyed.clear()
+        if not await self._register(0, "post"):
+            return False
+        try:
+            await asyncio.wait_for(self._rekeyed.wait(), timeout=REKEY_WAIT)
+        except asyncio.TimeoutError:
+            return False
+        return True
 
     # ---- HTTP handlers (bulb -> us) -----------------------------------
 
@@ -195,6 +244,7 @@ class MonsterLanController:
         random_2 = _rand_token(len(random_1) if random_1 else 16)
         time_2 = int(time.time() * 10000)
         self._session.derive(random_1, random_2, time_1, time_2)
+        self._rekeyed.set()
         resp = json.dumps({"random_2": random_2, "time_2": time_2},
                           separators=(",", ":"))
         return self._json(resp)
@@ -237,20 +287,20 @@ class MonsterLanController:
     async def _register(self, notify: int, method: str) -> bool:
         reg = {"local_reg": {"ip": self._local_ip, "notify": notify,
                              "port": self._port, "uri": "/local_lan"}}
-        url = f"http://{self._device_ip}/local_reg.json"
+        url = f"http://{self._device_ip}:{self._device_port}/local_reg.json"
         try:
             async with aiohttp.ClientSession() as s:
                 fn = s.post if method == "post" else s.put
                 async with fn(url, json=reg, timeout=REG_TIMEOUT) as resp:
+                    self._last_status = resp.status
                     if resp.status == 503:
-                        _LOGGER.info(
-                            "Bulb %s busy (503) - another LAN controller (the "
-                            "Monster app?) holds the session; using cloud",
-                            self._dsn,
-                        )
+                        # The Monster app holding the session gives this too, but so does a
+                        # bulb that is just busy: the caller retries before giving up.
+                        _LOGGER.debug("Bulb %s answered 503 (busy) to local_reg", self._dsn)
                         return False
                     return resp.status < 300
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            self._last_status = None
             _LOGGER.debug("local_reg to %s failed: %s", self._device_ip, err)
             return False
 
