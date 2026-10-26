@@ -1,0 +1,7 @@
+# gitleaks config for the lint / secrets job: the built-in rules plus one allowlisted file.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "const.py holds the Monster app's own Ayla app id and app secret. They ship inside the public Android app (the integration signs in the way the app does), are in the public GitHub repo, and are not Aareon's credentials."
+paths = ['''custom_components/monster_rgbic/const\.py''']

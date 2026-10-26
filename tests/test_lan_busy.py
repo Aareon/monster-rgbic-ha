@@ -9,10 +9,8 @@ import pathlib
 import socket
 import sys
 import time
-import types
 
 import aiohttp
-import pytest
 from aiohttp import web
 
 # lan.py needs nothing from Home Assistant, so load it without importing the package's __init__.

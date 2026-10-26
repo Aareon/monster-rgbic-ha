@@ -1,0 +1,4 @@
+# Store and check out text as LF everywhere, including on Windows, so the lint / eol job passes
+# and a copy of custom_components/ made from a Windows checkout does not carry CRLF onto the HA
+# host. Binary files are detected and left alone.
+* text=auto eol=lf

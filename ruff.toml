@@ -1,0 +1,16 @@
+# ruff config. CI runs `ruff check` in the lint / python job.
+# The rules are ruff's defaults, spelled out so a ruff upgrade cannot change them silently.
+# Lint only: `ruff format` is not enforced.
+
+# Home Assistant 2026.9 runs Python 3.13, and __init__.py uses the 3.12 `type` statement, so the
+# whole package is linted as 3.13. The tests job runs on the CI image's Python 3.11, which is
+# enough because tests/ only loads lan.py.
+target-version = "py313"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# dbus-fast reads a D-Bus type signature from each parameter annotation: `device: "o"` means an
+# object path and `uuid: "s"` a string. They are not Python names, so F821 is a false positive.
+"custom_components/monster_rgbic/_ble_agent.py" = ["F821"]
