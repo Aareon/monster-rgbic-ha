@@ -1,11 +1,18 @@
 # Turns a v* tag from the Forgejo mirror into a GitHub release. HACS only offers an update when
 # a release is published (a bare tag is not enough), and uses the release's tag as the version.
 # The tag is only created on Forgejo after its lint and tests passed, so this does not repeat them.
+# GitHub did not start this on the tag push of v0.8.0 (the tag arrived in the same push as main),
+# so it can also be run by hand for an existing tag.
 name: release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish a release for, e.g. v0.8.0
+        required: true
 
 permissions:
   contents: write
@@ -13,22 +20,25 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
       - name: Tag matches manifest.json
         run: |
           version=$(python3 scripts/release.py version)
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "tag $GITHUB_REF_NAME but manifest.json says $version" >&2
+          if [ "v$version" != "$TAG" ]; then
+            echo "tag $TAG but manifest.json says $version" >&2
             exit 1
           fi
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          previous=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
-          if [ -n "$previous" ]; then range="$previous..$GITHUB_REF_NAME"; else range="$GITHUB_REF_NAME"; fi
+          previous=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+          if [ -n "$previous" ]; then range="$previous..$TAG"; else range="$TAG"; fi
           git log --no-merges --format='- %s' "$range" > "$RUNNER_TEMP/notes.md"
-          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
