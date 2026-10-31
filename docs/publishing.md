@@ -42,8 +42,10 @@ GitHub runs `.github/workflows/`. Forgejo reads `.forgejo/workflows/` first and 
 
 ## One-time setup (Aareon)
 
-1. Make a key pair for this repo only, with no passphrase (a job cannot type one):
-   `ssh-keygen -t ed25519 -N "" -C monster-rgbic-ha-forgejo-mirror -f C:\Users\Aareon\monster-rgbic-ha-github-deploy-key`
+1. Make a key pair for this repo only, with no passphrase (a job cannot type one). In Windows
+   PowerShell 5.1 the empty passphrase must be written `'""'`: a bare `""` is dropped and
+   ssh-keygen answers "Too many arguments".
+   `ssh-keygen -t ed25519 -N '""' -C monster-rgbic-ha-forgejo-mirror -f C:\Users\Aareon\monster-rgbic-ha-github-deploy-key`
 2. GitHub, `Aareon/monster-rgbic-ha`, Settings, Deploy keys, Add: paste
    `C:\Users\Aareon\monster-rgbic-ha-github-deploy-key.pub`, tick **Allow write access**.
 3. Forgejo, `Homelab/monster-rgbic-ha`, Settings, Actions, Secrets: add `MIRROR_DEPLOY_KEY` with
