@@ -1,0 +1,9 @@
+# Paths that never reach the public GitHub mirror (read by scripts/mirror-to-github.sh).
+# One path per line; a directory covers everything under it. The paths are removed from the
+# whole history of the mirrored copy, so commits that only touched them disappear from it.
+
+# Forgejo Actions: runner label and ci/actions URLs on the LAN.
+.forgejo
+
+# Renovate runs on the Forgejo; GitHub does not use it.
+renovate.json

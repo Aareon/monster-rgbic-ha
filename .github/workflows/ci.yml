@@ -1,0 +1,42 @@
+# Checks on the public GitHub copy. GitHub is a one-way mirror of the Forgejo repo (see
+# docs/publishing.md), so this repeats the Forgejo checks and adds the two that only make
+# sense here: Home Assistant's hassfest and the HACS validation. Third-party actions are pinned
+# to a commit SHA; the comment names the version.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: home-assistant/actions/hassfest@86d4564712fa02543c808e3a693dd04f9d3f8361 # master
+
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      # brands: this custom repo has no entry in home-assistant/brands.
+      - uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+        with:
+          category: integration
+          ignore: brands
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install ruff==0.17.3 aiohttp==3.14.5 cryptography==50.0.2 pytest==9.1.1
+      - run: ruff check
+      - run: python -m pytest tests -q -p no:cacheprovider
