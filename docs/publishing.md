@@ -43,12 +43,14 @@ GitHub runs `.github/workflows/`. Forgejo reads `.forgejo/workflows/` first and 
 ## One-time setup (Aareon)
 
 1. Make a key pair for this repo only, with no passphrase (a job cannot type one):
-   `ssh-keygen -t ed25519 -N "" -C forgejo-mirror -f C:\Users\Aareon\mirror_key`
+   `ssh-keygen -t ed25519 -N "" -C monster-rgbic-ha-forgejo-mirror -f C:\Users\Aareon\monster-rgbic-ha-github-deploy-key`
 2. GitHub, `Aareon/monster-rgbic-ha`, Settings, Deploy keys, Add: paste
-   `C:\Users\Aareon\mirror_key.pub`, tick **Allow write access**.
+   `C:\Users\Aareon\monster-rgbic-ha-github-deploy-key.pub`, tick **Allow write access**.
 3. Forgejo, `Homelab/monster-rgbic-ha`, Settings, Actions, Secrets: add `MIRROR_DEPLOY_KEY` with
-   the content of `C:\Users\Aareon\mirror_key` (the private key; paste it in the page).
-4. Delete both files: `Remove-Item C:\Users\Aareon\mirror_key, C:\Users\Aareon\mirror_key.pub`
+   the content of `C:\Users\Aareon\monster-rgbic-ha-github-deploy-key` (the private key; paste it
+   in the page).
+4. Delete both files:
+   `Remove-Item C:\Users\Aareon\monster-rgbic-ha-github-deploy-key, C:\Users\Aareon\monster-rgbic-ha-github-deploy-key.pub`
 5. Forgejo, Settings, Actions: the job token must be allowed to push to the repo (the release
    job pushes the tag and the bump commit).
 6. GitHub repo settings: a description and topics (the HACS validation checks both), and
