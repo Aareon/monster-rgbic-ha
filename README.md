@@ -31,6 +31,21 @@ certificate tricks):
 - ✅ **Bluetooth onboarding** — set up a brand‑new strip's Wi‑Fi from Home
   Assistant, no Monster app required (see below)
 
+## Tested devices
+
+These devices have been tested with this integration on real hardware. All are
+controlled by the Monster Smart Lighting app (not the older Tuya/SmartLife-based
+Monster lights).
+
+| Product | Model |
+|---------|-------|
+| Monster Smart Indoor 10 ft Sound Reactive App Controlled Multicolor LED Strip Lights | MLW7-1010-ICM |
+| Monster Smart Lighting Smart Outdoor Multicolor and Multi-White LED Light Strip | MOW7-1006-ICW |
+| Monster Smart Lighting Smart Permanent Outdoor Lights, LED Eaves Lights, IP66 Weather & Water Resistant | MOW7-1030-ICW |
+
+Other models that use the Monster Smart Lighting app may work, but haven't been
+tested. If you try one, please open an issue with the product name and model number.
+
 ## Effects (built‑in scenes)
 
 The bulbs ship with banks of built‑in patterns — **static** looks (Candle,
