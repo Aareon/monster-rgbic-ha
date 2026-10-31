@@ -1,7 +1,13 @@
-# gitleaks config for the lint / secrets job: the built-in rules plus one allowlisted file.
+# gitleaks config for the lint / secrets job: the built-in rules plus two narrow allowlists.
 [extend]
 useDefault = true
 
 [[allowlists]]
 description = "const.py holds the Monster app's own Ayla app id and app secret. They ship inside the public Android app (the integration signs in the way the app does), are in the public GitHub repo, and are not Aareon's credentials."
 paths = ['''custom_components/monster_rgbic/const\.py''']
+
+[[allowlists]]
+description = "ble.py names the Ayla setup GATT characteristics by UUID. CHAR_SETUP_TOKEN is the characteristic the setup token is written to, not a token, and trips generic-api-key. This passes only that one assignment of a UUID, so anything else in ble.py is still scanned (a paths allowlist would skip the whole file)."
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+regexes = ['''\bCHAR_SETUP_TOKEN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"''']
